@@ -1,4 +1,4 @@
-package mediasort
+package mediasort.config
 
 import java.io.File
 
