@@ -19,15 +19,10 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
   val dryRun = opt[Boolean]("dry-run", descr = "don't make any filesystem changes")
   val quiet = opt[Boolean]("quiet", descr = "less logging")
   val verbose = opt[Boolean]("verbose", descr = "more logging")
-  val validateCfg = opt[Boolean]("validate", descr = "validate config and exit")
-  val path = trailArg[File]("path", descr = "path to act on", required = false)
+  val path = trailArg[File]("path", descr = "path to act on")
 
   validateFileIsFile(configPath)
   mutuallyExclusive(quiet, verbose)
-  validateOpt(validateCfg, path) {
-    case (Some(false), None) => Left("must provide a path to act on")
-    case _ => Right(())
-  }
 
   verify
 }
