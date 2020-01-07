@@ -1,4 +1,4 @@
-package mediasort.classify
+package mediasort.io
 
 class OMDB(apiKey: String) {
 

@@ -1,4 +1,4 @@
-package mediasort.classify
+package mediasort.io
 
 object IMDB {
   val UrlRegex = "^(?i)https?://www.imdb.com/title/(tt[0-9]+)/$".r
