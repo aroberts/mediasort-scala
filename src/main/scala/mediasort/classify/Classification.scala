@@ -1,9 +1,10 @@
 package mediasort.classify
 
 import mediasort.strings._
+import os.Path
 
 case class Classification(
-    path: String,
+    path: Path,
     mediaType: MediaType,
     score: Int,
     name: Option[String] = None
@@ -13,5 +14,5 @@ case class Classification(
 }
 
 object Classification {
-  def none(path: String) = Classification(path, MediaType.Other, 0)
+  def none(path: Path) = Classification(path, MediaType.Other, 0)
 }
