@@ -13,11 +13,15 @@ class OMDB(apiKey: String) {
       title: Option[String] = None,
       imdbId: Option[String] = None,
       year: Option[String] = None
-  ) = basicRequest
-      .get(uri"http://www.omdbapi.com/?apikey=$apiKey&i=$imdbId&t=$title&year=$year")
+  ) = {
+    val url = uri"http://www.omdbapi.com/?apikey=$apiKey&i=$imdbId&t=$title&year=$year"
+    // TODO: log request or params
+    basicRequest
+      .get(url)
       .response(asJson[OMDB.Response])
       .send()
       .flatMap(handleJsonResponse)
+  }
 
 
   def handleJsonResponse(response: Response[Either[ResponseError[Error], OMDB.Response]]) = {
