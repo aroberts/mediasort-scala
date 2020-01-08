@@ -7,5 +7,5 @@ import scala.concurrent.ExecutionContext
 
 package object io {
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  implicit val sttpBackend = AsyncHttpClientCatsBackend[IO]()
+  implicit val sttpBackend = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
 }

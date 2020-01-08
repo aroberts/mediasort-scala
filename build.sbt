@@ -1,4 +1,5 @@
 ThisBuild / scalaVersion := "2.13.1"
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val mediasort = (project in file("."))
   .settings(
@@ -18,6 +19,7 @@ lazy val mediasort = (project in file("."))
       "org.typelevel" %% "cats-effect" % "2.0.0",
 
       "com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6",
+      "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC6",
       "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.0-RC6",
 
       "org.scalatest" %% "scalatest" % "3.1.0" % Test
