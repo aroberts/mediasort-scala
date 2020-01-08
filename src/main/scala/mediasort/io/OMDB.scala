@@ -1,10 +1,10 @@
 package mediasort.io
 
+import cats.effect.IO
 import sttp.client._
 import sttp.client.circe._
 import io.circe._
 import io.circe.generic.semiauto._
-
 import mediasort.classify.MediaType
 
 class OMDB(apiKey: String) {
@@ -17,6 +17,14 @@ class OMDB(apiKey: String) {
       .get(uri"http://www.omdbapi.com/?apikey=$apiKey&i=$imdbId&t=$title&year=$year")
       .response(asJson[OMDB.Response])
       .send()
+      .flatMap(handleJsonResponse)
+
+
+  def handleJsonResponse(response: Response[Either[ResponseError[Error], OMDB.Response]]) = {
+    // TODO: debug logging
+    // TODO: error logging
+    response.body.fold(IO.raiseError, IO.pure)
+  }
 }
 
 object OMDB {
