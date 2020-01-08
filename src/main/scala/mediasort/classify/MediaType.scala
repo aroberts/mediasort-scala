@@ -5,6 +5,7 @@ import mediasort.io.OMDB
 import mediasort.strings
 import os._
 import cats.syntax.traverse._
+import mediasort.classify.MediaType.LosslessMusic
 
 import scala.util.matching.Regex
 
@@ -57,11 +58,25 @@ object MediaType {
       } else None
     }
   }
+
+  def detectAudio(in: Path) = {
+    val mimeTypes: List[String] = ???
+
+    val musicTypes = mimeTypes.filter(_.contains("audio"))
+    val score = Math.round(musicTypes.length * 10.0 / mimeTypes.length).toInt
+
+    if (score > 0) Some(IO.pure(Classification(
+      in,
+      if (musicTypes.exists(_.contains("flac"))) LosslessMusic else Music,
+      score,
+      Some(in.last)
+    ))) else None
+  }
   case object Music extends MediaType {
-    def detect(in: Path) = ???
+    def detect(in: Path) = detectAudio(in)
   }
   case object LosslessMusic extends MediaType {
-    def detect(in: Path) = ???
+    def detect(in: Path) = detectAudio(in)
   }
   case object Other extends MediaType {
     override def detect(in: Path) = Some(IO.pure(Classification.none(in)))
