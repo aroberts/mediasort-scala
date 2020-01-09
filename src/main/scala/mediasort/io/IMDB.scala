@@ -1,18 +1,20 @@
 package mediasort.io
 
+import mediasort.paths
+import cats.syntax.either._
+
 object IMDB {
   val UrlRegex = "^(?i)https?://www.imdb.com/title/(tt[0-9]+)/$".r
   val IdRegex = "(tt[0-9]{7})".r
 
   def findNfos(dir: os.Path) =
-    os.walk(dir)
+    paths.expandFiles(dir)
       .filter(_.ext == "nfo")
-      .filter(os.isFile)
 
-  def extractFirstIMDBId(nfo: os.Path) = {
-    val data = os.read(nfo)
-    LazyList(UrlRegex, IdRegex).flatMap(_.findFirstMatchIn(data)).headOption
-  }
+  def extractFirstIMDBId(nfo: os.Path) =
+    Either.catchNonFatal(os.read(nfo)).map(data =>
+      LazyList(UrlRegex, IdRegex).flatMap(_.findFirstMatchIn(data)).headOption
+    )
 
 
 }
