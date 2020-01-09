@@ -4,12 +4,12 @@ import io.circe.Decoder
 import io.circe.generic.semiauto._
 import mediasort.classify.MediaType
 
-case class Trigger(
+case class Matcher(
     mediaType: MediaType,
     confidence: Int,
     perform: List[Action]
 )
 
-object Trigger {
-  implicit val decodeTrigger: Decoder[Trigger] = deriveDecoder
+object Matcher {
+  implicit val decodeTrigger: Decoder[Matcher] = deriveDecoder
 }

@@ -10,7 +10,7 @@ import org.rogach.scallop.ValueConverter
 case class Config(
     logPath: String,
     omdbApiKey: String,
-    actions: List[Trigger]
+    actions: List[Matcher]
 ) {
 
 }
