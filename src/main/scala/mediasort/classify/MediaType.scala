@@ -4,8 +4,6 @@ import cats.effect._
 import mediasort.io.OMDB
 import mediasort.strings
 import os._
-import cats.syntax.traverse._
-import mediasort.classify.MediaType.LosslessMusic
 
 import scala.util.matching.Regex
 
@@ -60,7 +58,9 @@ object MediaType {
   }
 
   def detectAudio(in: Path) = {
-    val mimeTypes: List[String] = ???
+    val mimeTypes = os.walk(in)
+      .filter(os.isFile)
+      .map(MimeType.apply)
 
     val musicTypes = mimeTypes.filter(_.contains("audio"))
     val score = Math.round(musicTypes.length * 10.0 / mimeTypes.length).toInt
