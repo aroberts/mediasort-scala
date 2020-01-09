@@ -1,13 +1,17 @@
 package mediasort.classify
 
 import cats.effect._
+import cats.syntax.traverse._
+import cats.instances.list._
+
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import mediasort.classify.MimeType.MimedPath
 import mediasort.config.Config
-import mediasort.io.OMDB
+import mediasort.io.IMDB
 import mediasort.strings
 import os._
+
 
 import scala.util.matching.Regex
 
@@ -88,6 +92,14 @@ object MediaType {
       score,
       Some(in.last)
     ))) else None
+  }
+
+  def fromNFOs(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config) = {
+    mimedPaths.map(_.path)
+      .filter(_.ext == "nfo")
+      .toList
+      .traverse(IMDB.extractFirstIMDBId)
+      .map(_.flatten.map(_.mediaType))
   }
 
 }

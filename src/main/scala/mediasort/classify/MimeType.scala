@@ -10,7 +10,7 @@ object MimeType {
   def apply(s: String): String = impl.getContentType(s)
   def apply(s: Path): String = apply(s.last)
 
-  case class MimedPath(p: Path, mimeType: String)
+  case class MimedPath(path: Path, mimeType: String)
   def mimedPaths(in: Path) =
     paths.expandFiles(in).map(p => MimedPath(p, apply(p)))
 

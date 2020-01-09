@@ -32,7 +32,7 @@ class OMDB(apiKey: String) {
 
 object OMDB {
   case class Response(Response: String, Type: String) {
-    lazy val mediaType = Type match {
+    lazy val mediaType: MediaType = Type match {
       case "movie" => MediaType.Movie
       case "episode" | "series" => MediaType.TV
       case _ => MediaType.Other
