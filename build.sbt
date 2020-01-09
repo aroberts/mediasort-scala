@@ -1,6 +1,8 @@
 ThisBuild / scalaVersion := "2.13.1"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+scalacOptions ++= Seq("-deprecation", "-feature")
+
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
