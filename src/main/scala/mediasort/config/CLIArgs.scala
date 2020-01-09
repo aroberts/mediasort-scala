@@ -1,11 +1,11 @@
 package mediasort.config
 
-import java.io.File
-
 import org.rogach.scallop._
 import os.Path
 import cats.syntax.either._
 import mediasort.strings
+
+import CLIArgs._
 
 class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
 
@@ -24,7 +24,7 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
   val dryRun = opt[Boolean]("dry-run", descr = "don't make any filesystem changes")
   val quiet = opt[Boolean]("quiet", descr = "less logging")
   val verbose = opt[Boolean]("verbose", descr = "more logging")
-  val path = trailArg[File]("path", descr = "path to act on")
+  val path = trailArg[Path]("path", descr = "path to act on")
 
   mutuallyExclusive(quiet, verbose)
 

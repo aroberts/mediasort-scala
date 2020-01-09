@@ -4,6 +4,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
+import mediasort.io.OMDB
 import mediasort.strings
 import org.rogach.scallop.ValueConverter
 
@@ -12,7 +13,7 @@ case class Config(
     omdbApiKey: String,
     actions: List[Matcher]
 ) {
-
+  lazy val omdb = new OMDB(omdbApiKey)
 }
 
 object Config {

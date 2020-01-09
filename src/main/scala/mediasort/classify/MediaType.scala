@@ -3,6 +3,8 @@ package mediasort.classify
 import cats.effect._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
+import mediasort.classify.MimeType.MimedPath
+import mediasort.config.Config
 import mediasort.io.OMDB
 import mediasort.strings
 import os._
@@ -11,7 +13,7 @@ import scala.util.matching.Regex
 
 
 sealed trait MediaType {
-  def detect(in: Path): Option[IO[Classification]]
+  def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config): Option[IO[Classification]]
 }
 
 object MediaType {
@@ -19,15 +21,12 @@ object MediaType {
 
   case class MatcherWithScore(re: Regex, score: Int)
 
-  // TODO: from config
-  lazy val omdb: OMDB = new OMDB(???)
-
   case object TV extends MediaType {
     val SeasonNameRegex = MatcherWithScore(raw"(?i)(.*)(S\d\d?E\d\d?)".r, 6)
     val NightlyRegex = MatcherWithScore(raw"(.*)(\d{4}.\d{2}.\d{2})".r, 4)
     val WholeSeasonRegex = MatcherWithScore(raw"(.*)(Season.?\d\d?|S\d\d)".r, 4)
 
-    override def detect(in: Path) =
+    override def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config)=
       (for {
         mws <- LazyList(SeasonNameRegex, NightlyRegex, WholeSeasonRegex)
         matched <- mws.re.findFirstMatchIn(in.last)
@@ -40,7 +39,7 @@ object MediaType {
     val TitleAndYearRegex = MatcherWithScore(raw"^(.*)[.-_ ](\d{4})".r, 6)
     val HDYearResRegex = MatcherWithScore(raw"^(?i)(.*)[.-_ ](\d{4})[.-_ ]((?:480|720|1080)(?:p|i))".r, 8)
 
-    def detect(in: Path) = {
+    def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config) = {
       val name = in.last
       // skip tv shows that may false-positive
       if (TV.SeasonNameRegex.re.findFirstMatchIn(name).isEmpty) {
@@ -51,7 +50,7 @@ object MediaType {
           title = strings.normalize(m.group(1))
           year = m.group(2)
         } yield for {
-          resp <- omdb.query(title = Some(title), year = Some(year))
+          resp <- cfg.omdb.query(title = Some(title), year = Some(year))
         } yield if (resp.mediaType == this)
           // only classify as movie if omdb says so
           Classification(in, this, mws.score, Some(title))
@@ -62,10 +61,23 @@ object MediaType {
     }
   }
 
-  def detectAudio(in: Path) = {
-    val mimeTypes = os.walk(in)
-      .filter(os.isFile)
-      .map(MimeType.apply)
+  case object Music extends MediaType {
+    def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config) =
+      detectAudio(in, mimedPaths)
+  }
+
+  case object LosslessMusic extends MediaType {
+    override def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config) =
+      detectAudio(in, mimedPaths)
+  }
+
+  case object Other extends MediaType {
+    override def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config) =
+      Some(IO.pure(Classification.none(in)))
+  }
+
+  def detectAudio(in: Path, mimedPaths: IndexedSeq[MimedPath]) = {
+    val mimeTypes = mimedPaths.map(_.mimeType)
 
     val musicTypes = mimeTypes.filter(_.contains("audio"))
     val score = Math.round(musicTypes.length * 10.0 / mimeTypes.length).toInt
@@ -77,13 +89,5 @@ object MediaType {
       Some(in.last)
     ))) else None
   }
-  case object Music extends MediaType {
-    def detect(in: Path) = detectAudio(in)
-  }
-  case object LosslessMusic extends MediaType {
-    def detect(in: Path) = detectAudio(in)
-  }
-  case object Other extends MediaType {
-    override def detect(in: Path) = Some(IO.pure(Classification.none(in)))
-  }
+
 }
