@@ -19,4 +19,12 @@ package object strings {
   def normalize(in: String) = spacers.replaceAllIn(in, " ").trim
 
   def typeName[A](a: A) = a.getClass.getSimpleName.stripSuffix("$")
+
+  def errorMessage(prefix: String = "")(t: Throwable): String = {
+    val err = t match {
+      case e: Exception => e.getMessage
+      case _ => t.toString
+    }
+    s"$prefix $err".trim
+  }
 }

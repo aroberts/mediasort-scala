@@ -1,6 +1,8 @@
 package mediasort.classify
 
 import cats.effect._
+import io.circe.Decoder
+import io.circe.generic.semiauto._
 import mediasort.io.OMDB
 import mediasort.strings
 import os._
@@ -13,6 +15,8 @@ sealed trait MediaType {
 }
 
 object MediaType {
+  implicit val decodeMediaType: Decoder[MediaType] = deriveDecoder
+
   case class MatcherWithScore(re: Regex, score: Int)
 
   // TODO: from config
