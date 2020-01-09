@@ -23,7 +23,6 @@ class OMDB(apiKey: String) {
       .flatMap(handleJsonResponse)
   }
 
-
   def handleJsonResponse(response: Response[Either[ResponseError[Error], OMDB.Response]]) = {
     // TODO: debug logging
     // TODO: error logging

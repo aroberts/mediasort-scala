@@ -15,7 +15,8 @@ sealed trait MediaType {
 object MediaType {
   case class MatcherWithScore(re: Regex, score: Int)
 
-  val omdb: OMDB = ???
+  // TODO: from config
+  lazy val omdb: OMDB = new OMDB(???)
 
   case object TV extends MediaType {
     val SeasonNameRegex = MatcherWithScore(raw"(?i)(.*)(S\d\d?E\d\d?)".r, 6)
