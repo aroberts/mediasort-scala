@@ -1,5 +1,6 @@
 package mediasort.classify
 
+import cats.effect.IO
 import os.Path
 import javax.activation
 import mediasort.paths
@@ -12,6 +13,6 @@ object MimeType {
 
   case class MimedPath(path: Path, mimeType: String)
   def mimedPaths(in: Path) =
-    paths.expandFiles(in).map(p => MimedPath(p, apply(p)))
+    paths.expandFiles(in).map(_.map(p => MimedPath(p, apply(p))))
 
 }

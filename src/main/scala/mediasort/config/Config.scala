@@ -4,6 +4,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
+import mediasort.classify.Classification
 import mediasort.io.OMDB
 import mediasort.strings
 import org.rogach.scallop.ValueConverter
@@ -14,6 +15,10 @@ case class Config(
     actions: List[Matcher]
 ) {
   lazy val omdb = new OMDB(omdbApiKey)
+
+  def actionsFor(c: Classification) = actions.filter(m =>
+    m.mediaType == c.mediaType && m.confidence <= c.score
+  ).flatMap(_.perform)
 }
 
 object Config {
