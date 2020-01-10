@@ -4,6 +4,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
+import mediasort.action.Matcher
 import mediasort.classify.Classification
 import mediasort.io.OMDB
 import mediasort.strings

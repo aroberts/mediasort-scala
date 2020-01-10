@@ -1,4 +1,4 @@
-package mediasort.config
+package mediasort.action
 
 import io.circe.Decoder
 import io.circe.generic.semiauto._

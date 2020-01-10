@@ -1,9 +1,8 @@
-package mediasort.config
+package mediasort.action
 
 import cats.effect.IO
-import cats.syntax.traverse._
 import cats.instances.list._
-
+import cats.syntax.traverse._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
 import mediasort.paths
