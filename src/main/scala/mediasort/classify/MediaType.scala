@@ -2,6 +2,7 @@ package mediasort.classify
 
 import cats.effect._
 import cats.syntax.traverse._
+import cats.syntax.foldable._
 import cats.instances.list._
 import cats.instances.lazyList._
 
@@ -44,23 +45,19 @@ object MediaType {
     val TitleAndYearRegex = MatcherWithScore(raw"^(.*)[.-_ ](\d{4})".r, 6)
     val HDYearResRegex = MatcherWithScore(raw"^(?i)(.*)[.-_ ](\d{4})[.-_ ]((?:480|720|1080)(?:p|i))".r, 8)
 
+    private def omdbQuery(in: Path, title: String, year: String, score: Int)(implicit cfg: Config): IO[Option[Classification]] =
+      cfg.omdb.query(title = Some(title), year = Some(year)).map(
+        _.filter(_.mediaType == this).map(_ => Classification(in, this, score, Some(title)))
+      )
+
     def detect(in: Path, mimedPaths: IndexedSeq[MimedPath])(implicit cfg: Config) = {
       val name = in.last
-      // skip tv shows that may false-positive
       if (TV.SeasonNameRegex.re.findFirstMatchIn(name).isEmpty) {
-        val byRegex = for {
-          mws <- LazyList(HDYearResRegex, TitleAndYearRegex)
-          matched <- mws.re.findFirstMatchIn(name)
-          title = strings.normalize(matched.group(1))
-          year = matched.group(2)
-        } yield for {
-          resp <- cfg.omdb.query(title = Some(title), year = Some(year))
-          // only classify as movie if omdb says so
-        } yield resp
-          .filter(_.mediaType == this)
-          .map(_ => Classification(in, this, mws.score, Some(title)))
-
-        byRegex.sequence.map(_.flatten.headOption)
+        LazyList(HDYearResRegex, TitleAndYearRegex)
+          .flatMap(mws => mws.re.findFirstMatchIn(name).map(_ -> mws.score))
+          .collectFirstSomeM { case (m, score) =>
+            omdbQuery(in, strings.normalize(m.group(1)), m.group(2), score)
+          }.map(_.toIterable)
       } else IO.pure(None)
     }
   }
