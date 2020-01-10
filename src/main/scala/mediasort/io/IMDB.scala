@@ -13,7 +13,7 @@ object IMDB {
   def extractFirstIMDBId(nfo: os.Path)(implicit cfg: Config) =
     IO(os.read(nfo)).map(data =>
       LazyList(UrlRegex, IdRegex).flatMap(_.findFirstMatchIn(data)).headOption
-    ).flatMap(_.traverse(id => cfg.omdb.query(imdbId = Some(id.group(1)))))
+    ).flatMap(_.flatTraverse(id => cfg.omdb.query(imdbId = Some(id.group(1)))))
 
 
 }
