@@ -10,6 +10,8 @@ case class Classification(
     name: Option[String] = None
 ) {
   lazy val normalizedName = name.map(normalize)
+  lazy val normalizedNameOrDir = normalizedName.getOrElse(normalize(path.last))
+
   lazy val label = s"${underscore(typeName(mediaType))}($score)${name.map(" " + _).getOrElse("")}"
 }
 

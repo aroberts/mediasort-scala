@@ -5,13 +5,14 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import io.circe.Decoder
 import io.circe.generic.semiauto._
-import mediasort.paths
+import mediasort.classify.Classification
+import mediasort.{fuzz, paths, strings}
 import os._
 
 import scala.util.Try
 
 sealed trait Action {
-  def perform(dryRun: Boolean)(input: Path): IO[Unit]
+  def perform(dryRun: Boolean)(input: Classification): IO[Unit]
 }
 object Action {
   implicit val decodeAction: Decoder[Action] = deriveDecoder
@@ -28,7 +29,29 @@ object Action {
     }
 
   case class CopyTo(destination: Path, permissions: Option[PermSet]) extends Action {
-    def perform(dryRun: Boolean)(input: Path) = copyInto(destination, permissions, dryRun)(input)
+    def perform(dryRun: Boolean)(input: Classification) =
+      copyInto(destination, permissions, dryRun)(input.path)
+  }
+
+  case class CopyToMatchingSubdir(
+      destination: Path,
+      permissions: Option[PermSet],
+      matchCutoff: Option[Double]
+  ) extends Action {
+    def chooseSubdir(subdirs: IndexedSeq[Path], name: String) =
+      subdirs.map(s => s -> fuzz.ratio(name, strings.normalize(s.last)))
+        .filter(_._2 > matchCutoff.getOrElse(.9))
+        .sortBy(_._2)(Ordering.Double.IeeeOrdering.reverse)
+        .headOption
+        .map(_._1)
+
+    def perform(dryRun: Boolean)(input: Classification) = {
+      val name = input.normalizedNameOrDir
+
+      paths.expandDirs(destination)
+        .map(chooseSubdir(_, name).getOrElse(destination / name))
+        .flatMap(copyInto(_, permissions, dryRun)(input.path))
+    }
   }
 
   case class CopyContentsTo(
@@ -45,10 +68,10 @@ object Action {
       (only.nonEmpty && only.contains(ext)) || (only.isEmpty && !exclude.contains(ext))
     }
 
-    override def perform(dryRun: Boolean)(input: Path) = {
-      val target = if (preserveDir.getOrElse(false)) destination / input.last else destination
+    override def perform(dryRun: Boolean)(input: Classification) = {
+      val target = if (preserveDir.getOrElse(false)) destination / input.path.last else destination
 
-      paths.expandFiles(input)
+      paths.expandFiles(input.path)
         .flatMap(
           _.filter(extFilter)
             .toList

@@ -40,7 +40,7 @@ object Mediasort {
 
       // perform appropriate action
       _ <- config.actionsFor(classification)
-        .map(_.perform(parsed.dryRun.getOrElse(false))(input))
+        .map(_.perform(parsed.dryRun.getOrElse(false))(classification))
         .sequence
     } yield ()
 

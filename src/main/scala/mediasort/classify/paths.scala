@@ -8,5 +8,8 @@ package object paths {
   def expandFiles(p: Path): IO[IndexedSeq[Path]] = IO(
     if (os.isDir(p)) os.walk(p).filter(os.isFile) else IndexedSeq(p)
   )
+  def expandDirs(p: Path): IO[IndexedSeq[Path]] = IO(
+    if (os.isDir(p)) os.walk(p).filter(os.isDir) else IndexedSeq()
+  )
 
 }
