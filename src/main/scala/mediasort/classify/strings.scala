@@ -27,4 +27,5 @@ package object strings {
     }
     s"$prefix $err".trim
   }
+
 }
