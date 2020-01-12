@@ -23,7 +23,7 @@ case class Config(
 }
 
 object Config {
-  private implicit val jsonCfg = Configuration.default
+  implicit val jsonCfg = Configuration.default
     .withSnakeCaseMemberNames
     .withSnakeCaseConstructorNames
 

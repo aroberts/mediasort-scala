@@ -1,11 +1,13 @@
 package mediasort.action
 
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.instances.list._
 import cats.syntax.traverse._
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.extras.semiauto._
 import mediasort.classify.Classification
+import mediasort.config.Config.jsonCfg
 import mediasort.{fuzz, paths, strings}
 import os._
 
@@ -15,7 +17,7 @@ sealed trait Action {
   def perform(dryRun: Boolean)(input: Classification): IO[Unit]
 }
 object Action {
-  implicit val decodeAction: Decoder[Action] = deriveDecoder
+  implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
   implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(paths.path(s)))
   implicit val decodePermSet: Decoder[PermSet] = Decoder[Int].emapTry(i =>
     Try(PermSet(Integer.parseInt(i.toString, 8)))
@@ -58,14 +60,13 @@ object Action {
       destination: Path,
       permissions: Option[PermSet],
       // TODO: do these need to be options?
-      only: List[String],
-      exclude: List[String],
+      only: Option[NonEmptyList[String]],
+      exclude: Option[NonEmptyList[String]],
       preserveDir: Option[Boolean]
   ) extends Action {
-
     def extFilter(f: Path): Boolean = {
       val ext = f.ext
-      (only.nonEmpty && only.contains(ext)) || (only.isEmpty && !exclude.contains(ext))
+      only.fold[Boolean](!exclude.exists(_.contains(ext)))(_.contains(ext))
     }
 
     override def perform(dryRun: Boolean)(input: Classification) = {
@@ -77,6 +78,10 @@ object Action {
             .toList
             .traverse(copyInto(target, permissions, dryRun))
         ).map(_ => ())
+    }
+
+    implicit class NELOps[A](nel: NonEmptyList[A]) {
+      def contains(a: A) = nel.head == a || nel.tail.contains(a)
     }
   }
 }
