@@ -1,13 +1,13 @@
 package mediasort.config
 
 import io.circe._
-import io.circe.generic.semiauto._
+import io.circe.generic.extras.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
+import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
 import mediasort.classify.Classification
 import mediasort.io.OMDB
-import mediasort.strings
 import os.Path
 
 case class Config(
@@ -23,10 +23,13 @@ case class Config(
 }
 
 object Config {
-  implicit val decodeConfig: Decoder[Config] = deriveDecoder
+  private implicit val jsonCfg = Configuration.default
+    .withSnakeCaseMemberNames
+    .withSnakeCaseConstructorNames
+
+  implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
 
   def load(path: Path) = Either.catchNonFatal(os.read(path))
     .flatMap(parser.parse)
     .flatMap(_.as[Config])
-    .leftMap(strings.errorMessage())
 }

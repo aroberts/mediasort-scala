@@ -20,12 +20,9 @@ package object strings {
 
   def typeName[A](a: A) = a.getClass.getSimpleName.stripSuffix("$")
 
-  def errorMessage(prefix: String = "")(t: Throwable): String = {
-    val err = t match {
-      case e: Exception => e.getMessage
-      case _ => t.toString
-    }
-    s"$prefix $err".trim
+  def errorMessage(t: Throwable): String = t match {
+    case e: Exception => e.getMessage
+    case _ => t.toString
   }
 
 }
