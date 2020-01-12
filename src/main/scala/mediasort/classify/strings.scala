@@ -1,5 +1,8 @@
 package mediasort
 
+import cats.implicits._
+import _root_.io.circe.{DecodingFailure, ParsingFailure}
+
 import scala.annotation.tailrec
 
 package object strings {
@@ -21,6 +24,8 @@ package object strings {
   def typeName[A](a: A) = a.getClass.getSimpleName.stripSuffix("$")
 
   def errorMessage(t: Throwable): String = t match {
+    case e: ParsingFailure => e.show
+    case e: DecodingFailure => e.show
     case e: Exception => e.getMessage
     case _ => t.toString
   }
