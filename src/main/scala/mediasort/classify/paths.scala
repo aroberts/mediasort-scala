@@ -12,4 +12,6 @@ package object paths {
     if (os.isDir(p)) os.walk(p).filter(os.isDir) else IndexedSeq()
   )
 
+  def path(in: String) = Path(in, os.pwd)
+
 }

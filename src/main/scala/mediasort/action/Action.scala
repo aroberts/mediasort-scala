@@ -16,7 +16,7 @@ sealed trait Action {
 }
 object Action {
   implicit val decodeAction: Decoder[Action] = deriveDecoder
-  implicit val decodePath: Decoder[Path] = Decoder[String].map(Path(_))
+  implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(paths.path(s)))
   implicit val decodePermSet: Decoder[PermSet] = Decoder[Int].emapTry(i =>
     Try(PermSet(Integer.parseInt(i.toString, 8)))
   )

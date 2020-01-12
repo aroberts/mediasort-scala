@@ -8,7 +8,7 @@ import mediasort.action.Matcher
 import mediasort.classify.Classification
 import mediasort.io.OMDB
 import mediasort.strings
-import org.rogach.scallop.ValueConverter
+import os.Path
 
 case class Config(
     logPath: String,
@@ -24,12 +24,9 @@ case class Config(
 
 object Config {
   implicit val decodeConfig: Decoder[Config] = deriveDecoder
-  implicit val convertConfig: ValueConverter[Config] =
-    implicitly[ValueConverter[String]].flatMap(load)
 
-  def load(path: String) = Either.catchNonFatal(os.read(os.Path(path)))
+  def load(path: Path) = Either.catchNonFatal(os.read(path))
     .flatMap(parser.parse)
     .flatMap(_.as[Config])
-    .map(Option.apply)
     .leftMap(strings.errorMessage())
 }

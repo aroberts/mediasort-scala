@@ -1,17 +1,22 @@
 package mediasort
 
 import mediasort.classify.{Classification, MediaType, MimeType}
-import mediasort.config.CLIArgs
+import mediasort.config.{CLIArgs, Config}
 import cats.effect._
 import cats.syntax.traverse._
 import cats.syntax.either._
 import cats.instances.list._
 
 object Mediasort {
+  def error(s: String) = {
+    println(s)
+    sys.exit(1)
+  }
+
   def main(args: Array[String]): Unit = {
     val parsed = new CLIArgs(args.toIndexedSeq)
 
-    implicit val config = parsed.config()
+    implicit val config = Config.load(parsed.config()).fold(error, identity)
 
     // take path
     val input = parsed.path()

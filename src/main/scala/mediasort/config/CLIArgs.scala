@@ -3,8 +3,7 @@ package mediasort.config
 import org.rogach.scallop._
 import os.Path
 import cats.syntax.either._
-import mediasort.strings
-
+import mediasort.{paths, strings}
 import CLIArgs._
 
 class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
@@ -20,11 +19,13 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
   )
 
   // TODO: check for symlink support
-  val config = opt[Config]("config", descr = "path to config.yml", argName = "path", required = true)
+  // TODO: parse config as a path, and then convert to Config as separate step
+  //  so errors aren't reported as issues with the argument but with parsing the doc
+  val config = opt[Path]("config", descr = "path to config.yml", argName = "path", required = true)
   val dryRun = opt[Boolean]("dry-run", descr = "don't make any filesystem changes")
   val quiet = opt[Boolean]("quiet", descr = "less logging")
   val verbose = opt[Boolean]("verbose", descr = "more logging")
-  val path = trailArg[Path]("path", descr = "path to act on")
+  val path = trailArg[Path]("path", descr = "path to act on", required = false)
 
   mutuallyExclusive(quiet, verbose)
 
@@ -33,8 +34,7 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
 
 object CLIArgs {
   val convertString = implicitly[ValueConverter[String]]
-  implicit val convertConfig: ValueConverter[Config] = convertString.flatMap(Config.load)
   implicit val convertPath: ValueConverter[Path] = convertString.flatMap(p =>
-    Either.catchNonFatal(Some(os.Path(p))).leftMap(strings.errorMessage())
+    Either.catchNonFatal(Some(paths.path(p))).leftMap(strings.errorMessage())
   )
 }
