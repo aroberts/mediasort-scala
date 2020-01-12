@@ -5,15 +5,14 @@ import cats.syntax.traverse._
 import cats.syntax.foldable._
 import cats.instances.list._
 import cats.instances.lazyList._
-
 import io.circe.Decoder
-import io.circe.generic.semiauto._
+import io.circe.generic.extras.semiauto._
 import mediasort.classify.MimeType.MimedPath
 import mediasort.config.Config
+import mediasort.config.Config.jsonCfg
 import mediasort.io.IMDB
 import mediasort.strings
 import os._
-
 
 import scala.util.matching.Regex
 
@@ -23,7 +22,7 @@ sealed trait MediaType {
 }
 
 object MediaType {
-  implicit val decodeMediaType: Decoder[MediaType] = deriveDecoder
+  implicit val decodeMediaType: Decoder[MediaType] = deriveEnumerationDecoder
 
   case class MatcherWithScore(re: Regex, score: Int)
 
