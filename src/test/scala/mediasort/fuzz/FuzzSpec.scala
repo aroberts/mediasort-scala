@@ -1,8 +1,8 @@
 package mediasort.fuzz
 
-import mediasort.Test
+import mediasort.Spec
 
-class FuzzSpec extends Test {
+class FuzzSpec extends Spec {
 
   def compareDouble(lhs: Double, rhs: Double, len: Int) = {
     val pow = scala.math.pow(10, len)

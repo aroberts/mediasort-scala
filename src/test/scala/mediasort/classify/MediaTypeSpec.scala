@@ -1,11 +1,11 @@
 package mediasort.classify
 
-import mediasort.Test
+import mediasort.Spec
 import cats.effect._
 import cats.syntax.foldable._
 import cats.instances.all._
 
-class MediaTypeSpec extends Test {
+class MediaTypeSpec extends Spec {
 
   it should "use io properly with lazy list" in {
     var callCount = 0
