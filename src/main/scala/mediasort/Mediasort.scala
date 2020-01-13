@@ -8,7 +8,7 @@ import cats.syntax.either._
 import cats.instances.list._
 
 object Mediasort {
-  def error(prefix: String)(e: Throwable)= {
+  def fatal(prefix: String)(e: Throwable)= {
     println(List(prefix, strings.errorMessage(e)).mkString(" "))
     sys.exit(1)
   }
@@ -16,7 +16,8 @@ object Mediasort {
   def main(args: Array[String]): Unit = {
     val parsed = new CLIArgs(args.toIndexedSeq)
 
-    implicit val config = Config.load(parsed.config()).fold(error("Error parsing config:"), identity)
+    implicit val config = Config.load(parsed.config())
+      .fold(fatal("Error parsing config:"), identity)
 
     // take path
     val input = parsed.path()
@@ -43,13 +44,13 @@ object Mediasort {
         .getOrElse(Classification.none(input))
         // TODO: scatter some logging in here
 
-      // perform appropriate action
+      // perform appropriate actions
       _ <- config.actionsFor(classification)
         .map(_.perform(parsed.dryRun.getOrElse(false))(classification))
         .sequence
     } yield ()
 
-    proc.attempt.unsafeRunSync.leftMap(e => println(e.getMessage))
+    proc.attempt.unsafeRunSync.leftMap(fatal(""))
   }
 
 }
