@@ -18,9 +18,6 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
       |""".stripMargin
   )
 
-  // TODO: check for symlink support
-  // TODO: parse config as a path, and then convert to Config as separate step
-  //  so errors aren't reported as issues with the argument but with parsing the doc
   val config = opt[Path]("config", descr = "path to config.yml", argName = "path", required = true)
   val dryRun = opt[Boolean]("dry-run", descr = "don't make any filesystem changes")
   val quiet = opt[Boolean]("quiet", descr = "less logging")
