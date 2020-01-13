@@ -4,6 +4,7 @@ import mediasort.classify.{Classification, MediaType, MimeType}
 import mediasort.config.{CLIArgs, Config}
 import cats.effect._
 import cats.syntax.traverse._
+import cats.syntax.foldable._
 import cats.syntax.either._
 import cats.instances.list._
 
@@ -28,6 +29,7 @@ object Mediasort {
       mimeTypes = expanded.map(_.mimeType)
       hasVideo = mimeTypes.exists(_.contains("video"))
       hasAudio = mimeTypes.exists(_.contains("audio"))
+      dryRun = parsed.dryRun.getOrElse(false)
 
       // classify input
       nfos <- MediaType.fromNFOs(input, expanded)
@@ -46,8 +48,7 @@ object Mediasort {
 
       // perform appropriate actions
       _ <- config.actionsFor(classification)
-        .map(_.perform(parsed.dryRun.getOrElse(false))(classification))
-        .sequence
+        .foldLeftM(classification)((c, action) => action.perform(dryRun)(c))
     } yield ()
 
     proc.attempt.unsafeRunSync.leftMap(fatal(""))
