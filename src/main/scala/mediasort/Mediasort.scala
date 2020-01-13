@@ -3,14 +3,13 @@ package mediasort
 import mediasort.classify.{Classification, MediaType, MimeType}
 import mediasort.config.{CLIArgs, Config}
 import cats.effect._
-import cats.syntax.traverse._
 import cats.syntax.foldable._
 import cats.syntax.either._
 import cats.instances.list._
 
 object Mediasort {
   def fatal(prefix: String)(e: Throwable)= {
-    println(List(prefix, strings.errorMessage(e)).mkString(" "))
+    Console.err.println(List(prefix, strings.errorMessage(e)).mkString(" "))
     sys.exit(1)
   }
 
