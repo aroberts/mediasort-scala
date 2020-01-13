@@ -26,7 +26,8 @@ object Action {
   def copyInto(destination: Path, permissions: Option[PermSet], dryRun: Boolean)(input: Path) = {
     val res: Path = destination / input.last
 
-    // TODO: log
+    scribe.info(s"copying '$input' to '$destination'")
+
     if (dryRun) IO.pure(res) else IO {
       os.copy.into(input, destination, createFolders = true)
       permissions.foreach(os.perms.set(input, _))
@@ -64,7 +65,6 @@ object Action {
   case class CopyContentsTo(
       destination: Path,
       permissions: Option[PermSet],
-      // TODO: do these need to be options?
       only: Option[NonEmptyList[String]],
       exclude: Option[NonEmptyList[String]],
       preserveDir: Option[Boolean]

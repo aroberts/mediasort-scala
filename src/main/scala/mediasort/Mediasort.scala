@@ -5,16 +5,29 @@ import mediasort.config.{CLIArgs, Config}
 import cats.effect._
 import cats.syntax.foldable._
 import cats.syntax.either._
+import cats.syntax.show._
 import cats.instances.list._
+import scribe.format._
 
 object Mediasort {
-  def fatal(prefix: String)(e: Throwable)= {
-    Console.err.println(List(prefix, strings.errorMessage(e)).mkString(" "))
+  def fatal(prefix: String)(e: Throwable) = {
+    scribe.error(List(prefix, strings.errorMessage(e)).mkString(" "))
     sys.exit(1)
   }
 
   def main(args: Array[String]): Unit = {
     val parsed = new CLIArgs(args.toIndexedSeq)
+
+    val logLevel =
+      if (parsed.verbose.getOrElse(false)) scribe.Level.Debug
+      else if (parsed.quiet.getOrElse(false)) scribe.Level.Warn
+      else scribe.Level.Info
+
+    scribe.Logger.root.clearHandlers().clearModifiers()
+      .withHandler(
+        formatter = formatter"$date $level $message",
+        minimumLevel = Some(logLevel)
+      ).replace()
 
     implicit val config = Config.load(parsed.config())
       .fold(fatal("Error parsing config:"), identity)
@@ -44,15 +57,16 @@ object Mediasort {
         .headOption
         .getOrElse(Classification.none(input))
 
-//      _ = scribe.info
-        // TODO: scatter some logging in here
+      _ = scribe.debug(classification.show)
 
       // perform appropriate actions
-      _ <- config.actionsFor(classification)
-        .foldLeftM(classification)((c, action) => action.perform(dryRun)(c))
+      actions = config.actionsFor(classification)
+      _ = scribe.debug(s"${actions.length} matching actions")
+      _ <- actions.foldLeftM(classification)((c, action) => action.perform(dryRun)(c))
+
     } yield ()
 
-    proc.attempt.unsafeRunSync.leftMap(fatal(""))
+    proc.attempt.unsafeRunSync.leftMap(fatal(s"Error sorting '$input':"))
   }
 
 }

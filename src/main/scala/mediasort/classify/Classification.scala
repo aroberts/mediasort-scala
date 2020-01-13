@@ -1,5 +1,6 @@
 package mediasort.classify
 
+import cats.Show
 import mediasort.strings._
 import os.Path
 
@@ -17,4 +18,11 @@ case class Classification(
 
 object Classification {
   def none(path: Path) = Classification(path, MediaType.Other, 0)
+
+  implicit val showClassification: Show[Classification] = Show.show(c => List(
+    Some(c.path.toString),
+    Some(typeName(c.mediaType).toLowerCase + s"(${c.score})"),
+    c.name
+  ).flatten.mkString(" "))
+
 }
