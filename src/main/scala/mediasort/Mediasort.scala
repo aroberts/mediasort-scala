@@ -43,6 +43,8 @@ object Mediasort {
         .reverse
         .headOption
         .getOrElse(Classification.none(input))
+
+//      _ = scribe.info
         // TODO: scatter some logging in here
 
       // perform appropriate actions

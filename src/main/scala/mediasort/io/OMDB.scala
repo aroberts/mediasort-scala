@@ -1,6 +1,7 @@
 package mediasort.io
 
 import cats.effect.IO
+import cats.syntax.either._
 import sttp.client._
 import sttp.client.circe._
 import io.circe._
@@ -16,40 +17,31 @@ class OMDB(apiKey: String) {
       year: Option[String] = None
   ) = {
     val url = uri"http://www.omdbapi.com/?apikey=$apiKey&i=$imdbId&t=$title&year=$year"
-    // TODO: log request or params
     basicRequest
       .get(url)
       .response(asJson[OMDB.Response])
       .send()
-      .flatMap(handleJsonResponse)
+      .flatMap(_.body.fold(
+        IO.raiseError,
+        r => IO.pure(
+          r.toEither
+            .leftMap(e => scribe.error(s"[OMDB] ${e.error} $url"))
+            .toOption
+        )
+      ))
   }
-
-  // TODO: collapse this to above
-  def handleJsonResponse(response: Response[Either[ResponseError[Error], OMDB.Response]]) = {
-    // TODO: debug logging
-    // TODO: error logging
-    // TODO: we probably don't want to raise error here, we probably instead want to log any errors
-    // and convert this to Option[Success]
-    response.body.toOption.flatMap(_.failure).foreach(logError)
-    response.body.fold(IO.raiseError, r => IO.pure(r.success))
-  }
-
-  def logError(in: OMDB.Response.Failure) = () // stub
 }
 
 object OMDB {
   sealed trait Response {
-    def success: Option[Response.Success]
-    def failure: Option[Response.Failure]
+    def toEither: Either[Response.Failure, Response.Success]
   }
   object Response {
     case class Failure(error: String) extends Response {
-      override def success = None
-      override def failure = Some(this)
+      override def toEither = Left(this)
     }
     case class Success(`type`: String, title: String) extends Response {
-      override def success = Some(this)
-      override def failure = None
+      override def toEither = Right(this)
 
       lazy val mediaType: MediaType = `type` match {
         case "movie" => MediaType.Movie
