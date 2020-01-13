@@ -8,10 +8,13 @@ import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
 import mediasort.classify.Classification
 import mediasort.io.OMDB
+import mediasort.paths
 import os.Path
 
+import scala.util.Try
+
 case class Config(
-    logPath: String,
+    logPath: Option[Path],
     omdbApiKey: String,
     actions: List[Matcher]
 ) {
@@ -27,6 +30,7 @@ object Config {
     .withSnakeCaseMemberNames
     .withSnakeCaseConstructorNames
 
+  implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(paths.path(s)))
   implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
 
   def load(path: Path) = Either.catchNonFatal(os.read(path))
