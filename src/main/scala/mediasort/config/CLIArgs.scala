@@ -30,8 +30,7 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
 }
 
 object CLIArgs {
-  val convertString = implicitly[ValueConverter[String]]
-  implicit val convertPath: ValueConverter[Path] = convertString.flatMap(p =>
+  implicit val convertPath: ValueConverter[Path] = implicitly[ValueConverter[String]].flatMap(p =>
     Either.catchNonFatal(Some(paths.path(p))).leftMap(strings.errorMessage)
   )
 }
