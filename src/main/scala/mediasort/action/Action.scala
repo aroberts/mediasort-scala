@@ -14,7 +14,7 @@ import os._
 import scala.util.Try
 
 sealed trait Action {
-  def perform(dryRun: Boolean)(input: Classification): IO[Unit]
+  def perform(dryRun: Boolean)(input: Classification): IO[Classification]
 }
 object Action {
   implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
@@ -23,16 +23,20 @@ object Action {
     Try(PermSet(Integer.parseInt(i.toString, 8)))
   )
 
-  def copyInto(destination: Path, permissions: Option[PermSet], dryRun: Boolean)(input: Path) =
+  def copyInto(destination: Path, permissions: Option[PermSet], dryRun: Boolean)(input: Path) = {
+    val res: Path = destination / input.last
+
     // TODO: log
-    if (dryRun) IO.pure(()) else IO {
+    if (dryRun) IO.pure(res) else IO {
       os.copy.into(input, destination, createFolders = true)
       permissions.foreach(os.perms.set(input, _))
+      res
     }
+  }
 
   case class CopyTo(destination: Path, permissions: Option[PermSet]) extends Action {
     def perform(dryRun: Boolean)(input: Classification) =
-      copyInto(destination, permissions, dryRun)(input.path)
+      copyInto(destination, permissions, dryRun)(input.path).map(p => input.copy(path = p))
   }
 
   case class CopyToMatchingSubdir(
@@ -53,6 +57,7 @@ object Action {
       paths.expandDirs(destination)
         .map(chooseSubdir(_, name).getOrElse(destination / name))
         .flatMap(copyInto(_, permissions, dryRun)(input.path))
+        .map(p => input.copy(path = p))
     }
   }
 
@@ -77,7 +82,7 @@ object Action {
           _.filter(extFilter)
             .toList
             .traverse(copyInto(target, permissions, dryRun))
-        ).map(_ => ())
+        ).map(_ => input.copy(path = target))
     }
 
     implicit class NELOps[A](nel: NonEmptyList[A]) {
