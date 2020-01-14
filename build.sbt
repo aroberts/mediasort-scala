@@ -18,6 +18,8 @@ lazy val mediasort = (project in file("."))
       "io.circe" %% "circe-parser" % "0.12.3",
       "io.circe" %% "circe-yaml" % "0.12.0",
 
+      "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M1",
+
       "org.typelevel" %% "cats-effect" % "2.0.0",
 
       "com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6",
