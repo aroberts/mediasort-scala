@@ -7,6 +7,7 @@ import cats.syntax.traverse._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.classify.Classification
+import mediasort.config.Config
 import mediasort.config.Config.jsonCfg
 import mediasort.{fuzz, paths, strings}
 import os._
@@ -14,7 +15,7 @@ import os._
 import scala.util.Try
 
 sealed trait Action {
-  def perform(dryRun: Boolean)(input: Classification): IO[Classification]
+  def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config): IO[Classification]
 }
 object Action {
   implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
@@ -36,7 +37,7 @@ object Action {
   }
 
   case class CopyTo(destination: Path, permissions: Option[PermSet]) extends Action {
-    def perform(dryRun: Boolean)(input: Classification) =
+    def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) =
       copyInto(destination, permissions, dryRun)(input.path).map(p => input.copy(path = p))
   }
 
@@ -52,7 +53,7 @@ object Action {
         .headOption
         .map(_._1)
 
-    def perform(dryRun: Boolean)(input: Classification) = {
+    def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = {
       val name = input.normalizedNameOrDir
 
       paths.expandDirs(destination)
@@ -69,12 +70,14 @@ object Action {
       exclude: Option[NonEmptyList[String]],
       preserveDir: Option[Boolean]
   ) extends Action {
+    def nelContains[A](a: A)(nel: NonEmptyList[A]) = nel.head == a || nel.tail.contains(a)
+
     def extFilter(f: Path): Boolean = {
       val ext = f.ext
-      only.fold[Boolean](!exclude.exists(_.contains(ext)))(_.contains(ext))
+      only.fold[Boolean](!exclude.exists(nelContains(ext)))(nelContains(ext))
     }
 
-    override def perform(dryRun: Boolean)(input: Classification) = {
+    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = {
       val target = if (preserveDir.getOrElse(false)) destination / input.path.last else destination
 
       paths.expandFiles(input.path)
@@ -84,10 +87,16 @@ object Action {
             .traverse(copyInto(target, permissions, dryRun))
         ).map(_ => input.copy(path = target))
     }
+  }
 
-    implicit class NELOps[A](nel: NonEmptyList[A]) {
-      def contains(a: A) = nel.head == a || nel.tail.contains(a)
-    }
+  case class RefreshPlexSection(
+      sectionName: String,
+      force: Option[Boolean]
+  ) extends Action {
+    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = if (dryRun) {
+      scribe.info(s"skipping update of plex section '$sectionName'")
+      IO.pure(input)
+    } else cfg.plexAPI.refreshSection(sectionName, force.getOrElse(false)).map(_ => input)
   }
 }
 

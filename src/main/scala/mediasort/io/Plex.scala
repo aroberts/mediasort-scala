@@ -6,15 +6,15 @@ import mediasort.strings._
 import sttp.client._
 import Plex._
 import cats.data.EitherT
+import mediasort.config.Config.PlexConfig
 
 import scala.xml.{Elem, XML}
 
-class Plex(serverAddress: String, port: Int, token: String) {
-  val baseUrl = s"http://$serverAddress:$port"
-//    .leftMap(e => scribe.error(s"[PLEX] ${errorMessage(e)} $url"))
+class Plex(cfg: PlexConfig) {
+  val baseUrl = s"http://${cfg.address}:${cfg.port.getOrElse(32400)}"
 
   def listSections = {
-    val url = uri"$baseUrl/library/sections?X-Plex-Token=$token"
+    val url = uri"$baseUrl/library/sections?X-Plex-Token=${cfg.token}"
     basicRequest
       .get(url)
       .response(asXML)
@@ -23,7 +23,7 @@ class Plex(serverAddress: String, port: Int, token: String) {
 
   def refreshSectionById(sectionId: Int, force: Boolean = false) = {
     val forceParam = if (force) Some(1) else None
-    val url = uri"$baseUrl/library/sections/$sectionId/refresh?force=$forceParam&X-Plex-Token=$token"
+    val url = uri"$baseUrl/library/sections/$sectionId/refresh?force=$forceParam&X-Plex-Token=${cfg.token}"
     basicRequest
       .get(url)
       .response(asXML)
@@ -34,14 +34,20 @@ class Plex(serverAddress: String, port: Int, token: String) {
   private def pureEitherT[A, B](a: Option[A], other: => B) = EitherT(IO.pure(Either.fromOption(a, other)))
   private def pureEitherT[A](a: => A) = EitherT(IO.pure(Either.catchNonFatal(a)))
 
-  def refreshSection(sectionName: String, force: Boolean = false) = (for {
-    sections <- EitherT(listSections.map(_.body))
-    sectionElem = sections \\ "Directory" find(_.attribute("title").exists(_.text == sectionName))
-    section <- pureEitherT(sectionElem, err(s"Section title '$sectionName' not found"))
-    id <- pureEitherT(section.attribute("key").flatMap(_.headOption).map(_.text), err(s"No id for section '$sectionName'"))
-    idInt <- pureEitherT(id.toInt)
-    refresh <- EitherT(refreshSectionById(idInt, force).map(_.body))
-  } yield refresh).value
+  def refreshSection(sectionName: String, force: Boolean = false) = {
+    val res = for {
+      sections <- EitherT(listSections.map(_.body))
+      sectionElem = sections \\ "Directory" find(_.attribute("title").exists(_.text == sectionName))
+      section <- pureEitherT(sectionElem, err(s"Section title '$sectionName' not found"))
+      id <- pureEitherT(section.attribute("key").flatMap(_.headOption).map(_.text), err(s"No id for section '$sectionName'"))
+      idInt <- pureEitherT(id.toInt)
+      refresh <- EitherT(refreshSectionById(idInt, force).map(_.body))
+    } yield refresh
+    res.leftMap(e => scribe.error(s"[PLEX] ${errorMessage(e)}"))
+      // or fail on errors?
+      .toOption
+      .value
+  }
 
 }
 
