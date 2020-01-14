@@ -33,7 +33,7 @@ case class Config(
 
 object Config {
   case class OMDBConfig(apiKey: String)
-  case class PlexConfig(token: String, address: String, port: Option[Int])
+  case class PlexConfig(user: Env[String], password: Env[String], address: String, port: Option[Int])
 
   implicit val jsonCfg = Configuration.default
     .withSnakeCaseMemberNames
