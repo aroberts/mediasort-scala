@@ -8,15 +8,16 @@ import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import mediasort.classify.MediaType
+import mediasort.config.Config.OMDBConfig
 
-class OMDB(apiKey: String) {
+class OMDB(cfg: OMDBConfig) {
 
   def query(
       title: Option[String] = None,
       imdbId: Option[String] = None,
       year: Option[String] = None
   ) = {
-    val url = uri"http://www.omdbapi.com/?apikey=$apiKey&i=$imdbId&t=$title&year=$year"
+    val url = uri"http://www.omdbapi.com/?apikey=${cfg.apiKey}&i=$imdbId&t=$title&year=$year"
     basicRequest
       .get(url)
       .response(asJson[OMDB.Response])

@@ -7,7 +7,7 @@ import cats.syntax.either._
 import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
 import mediasort.classify.Classification
-import mediasort.config.Config.PlexConfig
+import mediasort.config.Config._
 import mediasort.io.{OMDB, Plex}
 import mediasort.{Mediasort, paths}
 import os.Path
@@ -16,14 +16,15 @@ import scala.util.Try
 
 case class Config(
     logPath: Option[Path],
-    omdbApiKey: String,
+    omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
     actions: List[Matcher]
 ) {
-  lazy val omdb = new OMDB(omdbApiKey)
-  lazy val plexAPI = plex.map(new Plex(_)).getOrElse(
-    Mediasort.fatal("")(new Exception("configure plex section to use Plex actions"))
-  )
+  lazy val omdbAPI = apiFromConfig(omdb, new OMDB(_), "configure omdb section to use OMDB capabilities")
+  lazy val plexAPI = apiFromConfig(plex, new Plex(_), "configure plex section to use Plex capabilities")
+
+  def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, error: String) =
+    cfg.map(f).getOrElse(Mediasort.fatal("")(new Exception(error)))
 
   def actionsFor(c: Classification) = actions.filter(m =>
     m.mediaType == c.mediaType && m.confidence <= c.score
@@ -38,6 +39,12 @@ object Config {
 
   implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(paths.path(s)))
   implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
+
+  case class OMDBConfig(apiKey: String)
+  object OMDBConfig {
+    implicit val decodeOMDBConf: Decoder[OMDBConfig] = deriveConfiguredDecoder
+  }
+
   case class PlexConfig(token: String, address: String, port: Option[Int])
   object PlexConfig {
     implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder

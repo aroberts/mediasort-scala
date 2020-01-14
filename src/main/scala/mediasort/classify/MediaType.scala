@@ -45,7 +45,7 @@ object MediaType {
     val HDYearResRegex = MatcherWithScore(raw"^(?i)(.*)[.-_ ](\d{4})[.-_ ]((?:480|720|1080)(?:p|i))".r, 8)
 
     private def omdbQuery(in: Path, title: String, year: String, score: Int)(implicit cfg: Config): IO[Option[Classification]] =
-      cfg.omdb.query(title = Some(title), year = Some(year)).map(
+      cfg.omdbAPI.query(title = Some(title), year = Some(year)).map(
         _.filter(_.mediaType == this).map(_ => Classification(in, this, score, Some(title)))
       )
 
