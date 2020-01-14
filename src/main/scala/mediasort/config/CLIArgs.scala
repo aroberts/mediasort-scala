@@ -3,12 +3,12 @@ package mediasort.config
 import org.rogach.scallop._
 import os.Path
 import cats.syntax.either._
-import mediasort.{paths, strings}
+import mediasort.{Mediasort, paths, strings}
 import CLIArgs._
 
 class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
 
-  version(s"mediasort v${Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")}")
+  version(s"mediasort v${Mediasort.version}")
   banner(
     """Act on filesystem paths based on rules
       |

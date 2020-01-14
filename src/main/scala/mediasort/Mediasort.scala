@@ -10,6 +10,7 @@ import cats.syntax.show._
 import cats.instances.list._
 
 object Mediasort {
+  def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def fatal(prefix: String)(e: Throwable) = {
     scribe.error(List(prefix, strings.errorMessage(e)).mkString(" "))
     sys.exit(1)
