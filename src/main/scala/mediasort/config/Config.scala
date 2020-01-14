@@ -32,6 +32,8 @@ case class Config(
 }
 
 object Config {
+  case class OMDBConfig(apiKey: String)
+  case class PlexConfig(token: String, address: String, port: Option[Int])
 
   implicit val jsonCfg = Configuration.default
     .withSnakeCaseMemberNames
@@ -39,16 +41,8 @@ object Config {
 
   implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(paths.path(s)))
   implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
-
-  case class OMDBConfig(apiKey: String)
-  object OMDBConfig {
-    implicit val decodeOMDBConf: Decoder[OMDBConfig] = deriveConfiguredDecoder
-  }
-
-  case class PlexConfig(token: String, address: String, port: Option[Int])
-  object PlexConfig {
-    implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder
-  }
+  implicit val decodeOMDBConf: Decoder[OMDBConfig] = deriveConfiguredDecoder
+  implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder
 
   def load(path: Path) = Either.catchNonFatal(os.read(path))
     .flatMap(parser.parse)
