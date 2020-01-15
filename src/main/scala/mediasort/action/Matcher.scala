@@ -7,7 +7,7 @@ import mediasort.classify.MediaType
 
 case class Matcher(
     mediaType: MediaType,
-    confidence: Int,
+    confidence: Option[Int],
     perform: List[Action]
 )
 
