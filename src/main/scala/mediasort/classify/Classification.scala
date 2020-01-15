@@ -27,6 +27,8 @@ case class Classification(
 object Classification {
   def none(path: Path) = Classification(path, MediaType.Other, 0)
 
+  def score(i: Int) = scala.math.min(i, 10)
+
   implicit val showClassification: Show[Classification] = Show.show(c => List(
     Some(c.path.toString),
     Some(typeName(c.mediaType).toLowerCase + s"(${c.score})"),
