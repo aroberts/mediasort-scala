@@ -1,6 +1,7 @@
 package mediasort.classify
 
 import cats.Show
+import cats.syntax.option._
 import mediasort.strings._
 import os.Path
 
@@ -14,6 +15,13 @@ case class Classification(
   lazy val normalizedNameOrDir = normalizedName.getOrElse(normalize(path.last))
 
   lazy val label = s"${underscore(typeName(mediaType))}($score)${name.map(" " + _).getOrElse("")}"
+
+  def toMultiLineString = List(
+    s"Path: $path".some,
+    s"Kind: $mediaType".some,
+    s"Score: $score".some,
+    name.map(n => s"Name: $n")
+  ).flatten.mkString("\n")
 }
 
 object Classification {

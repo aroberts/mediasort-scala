@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.instances.list._
 import cats.syntax.traverse._
+import cats.syntax.show._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.classify.Classification
@@ -100,8 +101,13 @@ object Action {
   }
 
   case class EmailNotify(to: String, subject: String, body: String) extends Action {
+    def bodyReplacements(input: Classification) = body
+      .replaceAllLiterally("{}", input.show)
+      .replaceAllLiterally("{debug}", input.toString)
+      .replaceAllLiterally("{long}", input.toMultiLineString)
+
     override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) =
-      cfg.emailAPI.send(to, subject, body).map(_ => input)
+      cfg.emailAPI.send(to, subject, bodyReplacements(input)).map(_ => input)
   }
 }
 
