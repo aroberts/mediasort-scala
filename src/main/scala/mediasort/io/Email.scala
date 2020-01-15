@@ -1,6 +1,7 @@
 package mediasort.io
 
 import mediasort.config.Config.EmailConfig
+import mediasort.strings._
 import cats.syntax.either._
 import java.util.Properties
 
@@ -27,7 +28,8 @@ class Email(cfg: EmailConfig) {
       message.setSubject(subject)
       message.setText(body)
       Transport.send(message, cfg.user.value, cfg.password.value)
-    }
+    }.leftMap(e => scribe.error(s"[EMAIL] ${errorMessage(e)}"))
+      .toOption
   }
 
 }

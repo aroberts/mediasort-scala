@@ -98,5 +98,10 @@ object Action {
       IO.pure(input)
     } else cfg.plexAPI.refreshSection(sectionName, force.getOrElse(false)).map(_ => input)
   }
+
+  case class EmailNotify(to: String, subject: String, body: String) extends Action {
+    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) =
+      cfg.emailAPI.send(to, subject, body).map(_ => input)
+  }
 }
 
