@@ -12,7 +12,7 @@ import mediasort.config.Config.PlexConfig
 import scala.xml.{Elem, XML}
 
 class Plex(cfg: PlexConfig) {
-  val baseUrl = s"http://${cfg.address}:${cfg.port.getOrElse(32400)}"
+  val baseUrl = s"http://${cfg.address.value}:${cfg.port.getOrElse(32400)}"
   val clientName = "mediasort"
   val clientVersion = Mediasort.version
   val clientId = java.security.MessageDigest.getInstance("SHA-1")

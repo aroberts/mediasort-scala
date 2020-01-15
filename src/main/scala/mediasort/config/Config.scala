@@ -8,7 +8,7 @@ import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
 import mediasort.classify.Classification
 import mediasort.config.Config._
-import mediasort.io.{OMDB, Plex}
+import mediasort.io.{Email, OMDB, Plex}
 import mediasort.{Mediasort, paths}
 import os.Path
 
@@ -18,13 +18,17 @@ case class Config(
     logPath: Option[Path],
     omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
+    email: Option[EmailConfig],
     actions: List[Matcher]
 ) {
-  lazy val omdbAPI = apiFromConfig(omdb, new OMDB(_), "configure omdb section to use OMDB capabilities")
-  lazy val plexAPI = apiFromConfig(plex, new Plex(_), "configure plex section to use Plex capabilities")
+  lazy val omdbAPI = apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB")
+  lazy val plexAPI = apiFromConfig(plex, new Plex(_), "plex", "Plex")
+  lazy val emailAPI = apiFromConfig(email, new Email(_), "email", "email notification")
 
-  def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, error: String) =
-    cfg.map(f).getOrElse(Mediasort.fatal("")(new Exception(error)))
+  def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String) =
+    cfg.map(f).getOrElse(Mediasort.fatal("")(
+      new Exception(s"configure $cfgName section to use $apiName capabilities"))
+    )
 
   def actionsFor(c: Classification) = actions.filter(m =>
     m.mediaType == c.mediaType && m.confidence <= c.score
@@ -32,8 +36,16 @@ case class Config(
 }
 
 object Config {
-  case class OMDBConfig(apiKey: String)
-  case class PlexConfig(user: Env[String], password: Env[String], address: String, port: Option[Int])
+  case class OMDBConfig(apiKey: Env[String])
+  case class PlexConfig(user: Env[String], password: Env[String], address: Env[String], port: Option[Int])
+  case class EmailConfig(
+      from: Env[String],
+      host: Env[String],
+      port: Env[Int],
+      user: Env[String],
+      password: Env[String],
+      tls: Option[Boolean]
+  )
 
   implicit val jsonCfg = Configuration.default
     .withSnakeCaseMemberNames
@@ -43,6 +55,7 @@ object Config {
   implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
   implicit val decodeOMDBConf: Decoder[OMDBConfig] = deriveConfiguredDecoder
   implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder
+  implicit val decodeEmailConf: Decoder[EmailConfig] = deriveConfiguredDecoder
 
   def load(path: Path) = Either.catchNonFatal(os.read(path))
     .flatMap(parser.parse)
