@@ -2,5 +2,6 @@ target/
 project/target/
 .idea
 *.log
+*.env
 
 config.yml
