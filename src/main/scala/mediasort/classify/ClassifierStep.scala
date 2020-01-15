@@ -37,4 +37,12 @@ object ClassifierStep {
       })
   }
 
+  case class NotContainsMimePattern(pattern: String) extends Chained {
+    override def classify(owner: Classifier, i: Input, current: Classification)(implicit cfg: Config) =
+      i.mimeTypes.map(types => {
+        val regex = pattern.r
+        if (types.exists(regex.findFirstMatchIn(_).isDefined)) None else Option(current)
+      })
+  }
+
 }
