@@ -44,8 +44,7 @@ object Mediasort {
 
       // choose highest score
       classification = (nfos ++ tv ++ movie ++ music ++ lossless)
-        .sortBy(_.score)
-        .reverse
+        .sortBy(_.score)(Ordering[Int].reverse)
         .headOption
         .getOrElse(Classification.none(input))
 
