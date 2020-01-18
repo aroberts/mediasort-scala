@@ -16,6 +16,7 @@ import scala.util.Try
 
 case class Config(
     logPath: Option[Path],
+    unclassifiedMediaType: Option[String],
     omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
     email: Option[EmailConfig],
@@ -24,6 +25,8 @@ case class Config(
   lazy val omdbAPI = apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB")
   lazy val plexAPI = apiFromConfig(plex, new Plex(_), "plex", "Plex")
   lazy val emailAPI = apiFromConfig(email, new Email(_), "email", "email notification")
+  // TODO: make into media type
+  val unclassified = unclassifiedMediaType.getOrElse("other")
 
   def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String) =
     cfg.map(f).getOrElse(Mediasort.fatal("")(
