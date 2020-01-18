@@ -51,7 +51,7 @@ object ClassifierStep {
       })
   }
 
-  case class ByOMDBFileFilter(
+  case class OMDBQueryFromFileContents(
       extensions: List[String],
       contentPatterns: List[String],
       queryFromGroups: OMDBQueryFromGroups,
