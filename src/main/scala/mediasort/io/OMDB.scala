@@ -9,15 +9,13 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import mediasort.classify.MediaType
 import mediasort.config.Config.OMDBConfig
+import mediasort.io.OMDB.Query
 
 class OMDB(cfg: OMDBConfig) {
 
-  def query(
-      title: Option[String] = None,
-      imdbId: Option[String] = None,
-      year: Option[String] = None
-  ) = {
-    val url = uri"http://www.omdbapi.com/?apikey=${cfg.apiKey}&i=$imdbId&t=$title&year=$year"
+
+  def query(q: Query) = {
+    val url = uri"http://www.omdbapi.com/?${q.toParams(cfg.apiKey.value)}"
     basicRequest
       .get(url)
       .response(asJson[OMDB.Response])
@@ -34,6 +32,19 @@ class OMDB(cfg: OMDBConfig) {
 }
 
 object OMDB {
+  case class Query(
+      title: Option[String] = None,
+      imdbId: Option[String] = None,
+      year: Option[String] = None
+  ) {
+    def toParams(apiKey: String) = Map(
+      "apikey" -> apiKey,
+      "i" -> imdbId,
+      "t" -> title,
+      "year" -> year,
+    )
+  }
+
   sealed trait Response {
     def toEither: Either[Response.Failure, Response.Success]
   }
@@ -43,6 +54,8 @@ object OMDB {
     }
     case class Success(`type`: String, title: String) extends Response {
       override def toEither = Right(this)
+
+      def containsAnyType(types: List[String]) = types.contains(`type`)
 
       lazy val mediaType: MediaType = `type` match {
         case "movie" => MediaType.Movie

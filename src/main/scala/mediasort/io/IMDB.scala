@@ -10,10 +10,10 @@ object IMDB {
   val UrlRegex = "^(?i)https?://www.imdb.com/title/(tt[0-9]+)/$".r
   val IdRegex = "(tt[0-9]{7})".r
 
-  def extractFirstIMDBId(nfo: os.Path)(implicit cfg: Config) =
-    IO(os.read(nfo)).map(data =>
-      LazyList(UrlRegex, IdRegex).flatMap(_.findFirstMatchIn(data)).headOption
-    ).flatMap(_.flatTraverse(id => cfg.omdbAPI.query(imdbId = Some(id.group(1)))))
+  def extractFirstIMDBId(nfo: os.Path)(implicit cfg: Config) = ???
+//    IO(os.read(nfo)).map(data =>
+//      LazyList(UrlRegex, IdRegex).flatMap(_.findFirstMatchIn(data)).headOption
+//    ).flatMap(_.flatTraverse(id => cfg.omdbAPI.query(imdbId = Some(id.group(1)))))
 
 
 }

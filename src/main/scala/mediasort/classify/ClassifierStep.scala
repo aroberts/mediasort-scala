@@ -1,7 +1,13 @@
 package mediasort.classify
 
+import cats.data.{EitherT, OptionT}
+import cats.instances.option._
+import cats.instances.lazyList._
+import cats.syntax.traverse._
 import cats.effect.IO
 import mediasort.config.Config
+import mediasort.strings
+import os.Path
 
 sealed trait ClassifierStep
 object ClassifierStep {
@@ -43,6 +49,35 @@ object ClassifierStep {
         val regex = pattern.r
         if (types.exists(regex.findFirstMatchIn(_).isDefined)) None else Option(current)
       })
+  }
+
+  case class ByOMDBFileFilter(
+      extensions: List[String],
+      contentPatterns: List[String],
+      queryFromGroups: OMDBQueryFromGroups,
+      score: Int
+  ) extends Initial {
+    def extractFirstMatch(path: Path)(implicit cfg: Config) =
+      IO(os.read(path)).flatMap(data => {
+        EitherT(LazyList.from(contentPatterns.map(_.r))
+          .flatMap(_.findFirstMatchIn(data))
+          .map(queryFromGroups.toQuery)
+        ).leftMap(err => scribe.error(s"${strings.underscore(strings.typeName(this))}: $err"))
+          .collectRight
+          .traverse(q =>
+            OptionT(cfg.omdbAPI.query(q))
+              .filter(_.containsAnyType(queryFromGroups.responseTypes))
+              .value
+          )
+      }).map(_.flatten.headOption)
+
+    def classify(owner: Classifier, i: Input)(implicit cfg: Config) =
+      OptionT(i.expandedPaths.flatMap(paths =>
+        LazyList.from(paths.filter(p => extensions.contains(p.ext)))
+          .traverse(extractFirstMatch)
+          .map(_.flatten.headOption)
+      )).map(r => Classification(i.path, owner.media, score, Some(r.title)))
+        .value
   }
 
 }
