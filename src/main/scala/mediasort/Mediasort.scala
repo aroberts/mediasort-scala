@@ -1,11 +1,12 @@
 package mediasort
 
-import mediasort.classify.{Classification, MediaType, MimeType}
+import mediasort.classify.{Classification, Input, MediaType, MimeType}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.io.Logging
 import cats.effect._
 import cats.syntax.foldable._
 import cats.syntax.either._
+import cats.syntax.traverse._
 import cats.syntax.show._
 import cats.instances.list._
 
@@ -25,28 +26,19 @@ object Mediasort {
     Logging.configure(parsed)
 
     // take path
-    val input = parsed.path()
+    val input = Input(parsed.path())
+    val dryRun = parsed.dryRun.getOrElse(false)
 
     val proc = for {
-      // expand input path
-      expanded <- MimeType.mimedPaths(input)
-      mimeTypes = expanded.map(_.mimeType)
-      hasVideo = mimeTypes.exists(_.contains("video"))
-      hasAudio = mimeTypes.exists(_.contains("audio"))
-      dryRun = parsed.dryRun.getOrElse(false)
-
-      // classify input
-      nfos <- MediaType.fromNFOs(input, expanded)
-      tv <- if (hasVideo) MediaType.TV.detect(input, expanded) else IO.pure(None)
-      movie <- if (hasVideo) MediaType.Movie.detect(input, expanded) else IO.pure(None)
-      music <- if (hasAudio) MediaType.Music.detect(input, expanded) else IO.pure(None)
-      lossless <- if (hasAudio) MediaType.LosslessMusic.detect(input, expanded) else IO.pure(None)
+      // get all classifications produced by conf
+      classifications <- config.classifiers.traverse(_.classification(input)).map(_.flatten)
+      _ = scribe.debug(classifications.show)
 
       // choose highest score
-      classification = (nfos ++ tv ++ movie ++ music ++ lossless)
+      classification = classifications
         .sortBy(_.score)(Ordering[Int].reverse)
         .headOption
-        .getOrElse(Classification.none(input))
+        .getOrElse(Classification.none(input.path))
 
       _ = scribe.debug(classification.show)
 

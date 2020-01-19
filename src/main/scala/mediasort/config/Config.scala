@@ -6,7 +6,7 @@ import io.circe.yaml.parser
 import cats.syntax.either._
 import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
-import mediasort.classify.Classification
+import mediasort.classify.{Classification, Classifier}
 import mediasort.config.Config._
 import mediasort.io.{Email, OMDB, Plex}
 import mediasort.{Mediasort, paths}
@@ -20,6 +20,7 @@ case class Config(
     omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
     email: Option[EmailConfig],
+    classifiers: List[Classifier],
     actions: List[Matcher]
 ) {
   lazy val omdbAPI = apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB")

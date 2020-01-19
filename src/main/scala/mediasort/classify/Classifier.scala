@@ -2,10 +2,13 @@ package mediasort.classify
 
 import cats.Monad
 import cats.effect.IO
+import io.circe.Decoder
+import io.circe.generic.extras.semiauto._
 import mediasort.config.Config
+import mediasort.config.Config.jsonCfg
 
 case class Classifier(
-  mediaType: String, // TODO
+  mediaType: MediaType,
   criteria: List[ClassifierStep]
 ) {
   lazy val media: MediaType = ???
@@ -22,5 +25,8 @@ case class Classifier(
       // if there were an indirection trait that the steps returned, each
       // classifier could potentially return its own data
     }
+}
 
+object Classifier {
+  implicit val decodeClassifier: Decoder[Classifier] = deriveConfiguredDecoder
 }

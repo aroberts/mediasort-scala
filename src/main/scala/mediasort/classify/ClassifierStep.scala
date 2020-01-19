@@ -5,20 +5,24 @@ import cats.instances.option._
 import cats.instances.lazyList._
 import cats.syntax.traverse._
 import cats.effect.IO
+import io.circe.Decoder
+import io.circe.generic.extras.semiauto._
 import mediasort.config.Config
+import mediasort.config.Config.jsonCfg
 import mediasort.strings
 import os.Path
 
 sealed trait ClassifierStep
 object ClassifierStep {
+  implicit val decodeClassifierStep: Decoder[ClassifierStep] = deriveConfiguredDecoder
 
-  trait Initial extends ClassifierStep {
+  sealed trait Initial extends ClassifierStep {
     def classify(owner: Classifier, i: Input)(implicit cfg: Config): IO[Option[Classification]]
   }
 
-  trait Chained extends ClassifierStep {
-    def classify(owner: Classifier, i: Input, current: Classification)(implicit cfg: Config): IO[Option[Classification]]
 
+  sealed trait Chained extends ClassifierStep {
+    def classify(owner: Classifier, i: Input, current: Classification)(implicit cfg: Config): IO[Option[Classification]]
   }
 
   case class MimePatternPercent(pattern: String) extends Initial {
@@ -28,7 +32,7 @@ object ClassifierStep {
         val matches = types.flatMap(regex.findFirstMatchIn)
         val score = Math.round(matches.length * 10.0 / types.length).toInt
 
-        Option(Classification(i.path, owner.media, score, Some(i.path.last)))
+        Option(Classification(i.path, owner.mediaType, score, Some(i.path.last)))
       })
     }
   }
@@ -76,8 +80,10 @@ object ClassifierStep {
         LazyList.from(paths.filter(p => extensions.contains(p.ext)))
           .traverse(extractFirstMatch)
           .map(_.flatten.headOption)
-      )).map(r => Classification(i.path, owner.media, score, Some(r.title)))
+      )).map(r => Classification(i.path, owner.mediaType, score, Some(r.title)))
         .value
   }
+
+//  case class InputPatterns
 
 }

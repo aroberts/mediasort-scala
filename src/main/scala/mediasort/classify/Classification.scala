@@ -2,6 +2,7 @@ package mediasort.classify
 
 import cats.Show
 import cats.syntax.option._
+import mediasort.config.Config
 import mediasort.strings._
 import os.Path
 
@@ -14,7 +15,7 @@ case class Classification(
   lazy val normalizedName = name.map(normalize)
   lazy val normalizedNameOrDir = normalizedName.getOrElse(normalize(path.last))
 
-  lazy val label = s"${underscore(typeName(mediaType))}($score)${name.map(" " + _).getOrElse("")}"
+  lazy val label = s"${path.toString} ${mediaType.value}($score)${name.map(" " + _).getOrElse("")}"
 
   def toMultiLineString = List(
     s"Path: $path".some,
@@ -25,14 +26,9 @@ case class Classification(
 }
 
 object Classification {
-  def none(path: Path) = Classification(path, MediaType.Other, 0)
+  def none(path: Path)(implicit cfg: Config) = Classification(path, MediaType(cfg.unclassified), 0)
 
-  def score(i: Int) = scala.math.min(i, 10)
+  def score(i: Int) = scala.math.max(0, scala.math.min(i, 10))
 
-  implicit val showClassification: Show[Classification] = Show.show(c => List(
-    Some(c.path.toString),
-    Some(typeName(c.mediaType).toLowerCase + s"(${c.score})"),
-    c.name
-  ).flatten.mkString(" "))
-
+  implicit val showClassification: Show[Classification] = Show.show(_.label)
 }

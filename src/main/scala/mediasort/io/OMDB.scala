@@ -7,7 +7,6 @@ import sttp.client.circe._
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import mediasort.classify.MediaType
 import mediasort.config.Config.OMDBConfig
 import mediasort.io.OMDB.Query
 
@@ -56,12 +55,6 @@ object OMDB {
       override def toEither = Right(this)
 
       def containsAnyType(types: List[String]) = types.contains(`type`)
-
-      lazy val mediaType: MediaType = `type` match {
-        case "movie" => MediaType.Movie
-        case "episode" | "series" => MediaType.TV
-        case _ => MediaType.Other
-      }
     }
 
     private implicit val omdbCfg: Configuration = Configuration.default.copy(
