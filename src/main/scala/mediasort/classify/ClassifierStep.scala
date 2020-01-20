@@ -11,6 +11,7 @@ import mediasort.config.Config
 import mediasort.config.Config.jsonCfg
 import mediasort.strings
 import os.Path
+import fs2._
 
 sealed trait ClassifierStep
 object ClassifierStep {
@@ -89,6 +90,19 @@ object ClassifierStep {
         .value
   }
 
-//  case class InputPatterns
+  case class InputPatterns(
+      patterns: List[MatcherWithScore]
+  ) extends Initial {
+    def classify(owner: Classifier, i: Input)(implicit cfg: Config) = {
+      val pipe = for {
+        mws <- Stream.emits(patterns)
+        matched <- Stream(mws.pattern.findFirstMatchIn(i.path.last)).unNone
+        // TODO: matched.group can fail
+        title = mws.titleGroup.map(matched.group)
+      } yield Classification(i.path, owner.mediaType, mws.score, title)
+
+      IO.pure(pipe.take(1).compile.last)
+    }
+  }
 
 }

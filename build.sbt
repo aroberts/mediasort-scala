@@ -24,6 +24,9 @@ lazy val mediasort = (project in file("."))
 
       "com.sun.mail" % "javax.mail" % "1.6.2",
 
+      "co.fs2" %% "fs2-core" % "2.1.0",
+      "co.fs2" %% "fs2-io" % "2.1.0",
+
       "com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6",
       "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC6",
       "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.0-RC6",
