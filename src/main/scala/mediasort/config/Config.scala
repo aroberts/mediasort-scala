@@ -8,17 +8,16 @@ import io.circe.yaml.parser
 import cats.syntax.either._
 import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
-import mediasort.classify.{Classification, Classifier}
+import mediasort.classify.{Classification, Classifier, MediaType}
 import mediasort.config.Config._
 import mediasort.io.{Email, OMDB, Plex}
 import mediasort.{Mediasort, paths}
 
 import scala.io.Source
-import scala.util.Try
 
 case class Config(
     logPath: Option[Path],
-    unclassifiedMediaType: Option[String],
+    unclassifiedMediaType: Option[MediaType],
     omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
     email: Option[EmailConfig],
@@ -28,8 +27,7 @@ case class Config(
   lazy val omdbAPI = apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB")
   lazy val plexAPI = apiFromConfig(plex, new Plex(_), "plex", "Plex")
   lazy val emailAPI = apiFromConfig(email, new Email(_), "email", "email notification")
-  // TODO: make into media type
-  val unclassified = unclassifiedMediaType.getOrElse("other")
+  val unclassified = unclassifiedMediaType.getOrElse(MediaType("other"))
 
   def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String) =
     cfg.map(f).getOrElse(Mediasort.fatal("")(

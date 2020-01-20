@@ -27,7 +27,7 @@ case class Classification(
 }
 
 object Classification {
-  def none(path: Path)(implicit cfg: Config) = Classification(path, MediaType(cfg.unclassified), 0)
+  def none(path: Path)(implicit cfg: Config) = Classification(path, cfg.unclassified, 0)
 
   def score(i: Int) = scala.math.max(0, scala.math.min(i, 10))
 
