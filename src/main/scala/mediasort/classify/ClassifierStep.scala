@@ -57,14 +57,19 @@ object ClassifierStep {
 
   case class OMDBQueryFromFileContents(
       extensions: List[String],
+      // TODO:
+      //  contentPatterns: List[MatcherWithScore],
       contentPatterns: List[String],
       queryFromGroups: OMDBQueryFromGroups,
       score: Int
   ) extends Initial {
+    // rewrite this with EitherT[IO, Error, A] where A ends up being Option[Classification]
+    // also, fs2 provides a better lazy list
     def extractFirstMatch(path: Path)(implicit cfg: Config) =
       IO(os.read(path)).flatMap(data => {
-        EitherT(LazyList.from(contentPatterns.map(_.r))
-          .flatMap(_.findFirstMatchIn(data))
+        EitherT(LazyList.from(contentPatterns)
+          // TODO: uncaught exception!
+          .flatMap(_.r.findFirstMatchIn(data))
           .map(queryFromGroups.toQuery)
         ).leftMap(err => scribe.error(s"${strings.underscore(strings.typeName(this))}: $err"))
           .collectRight
