@@ -1,6 +1,7 @@
 package mediasort.io
 
-import mediasort.config.{CLIArgs, Config}
+import java.nio.file.Path
+
 import scribe.Level
 import scribe.format._
 import scribe.handler.LogHandler
@@ -8,15 +9,10 @@ import scribe.writer.FileWriter
 
 object Logging {
 
-  def configure(args: CLIArgs)(implicit cfg: Config): Unit = {
-    val logLevel: Level =
-      if (args.verbose.getOrElse(false)) Level.Debug
-      else if (args.quiet.getOrElse(false)) Level.Warn
-      else Level.Info
-
+  def configure(logLevel: Level, logPath: Option[Path]): Unit = {
     val logFormat = formatter"$date $level $message"
     val console = LogHandler(formatter = logFormat, minimumLevel = Some(logLevel))
-    val file = cfg.logPath.map(p => console.withWriter(FileWriter().path(_ => p).append))
+    val file = logPath.map(p => console.withWriter(FileWriter().path(_ => p).append))
 
     List(Some(console), file).flatten
       .foldLeft(scribe.Logger.root.clearHandlers().clearModifiers())(_.withHandler(_))
