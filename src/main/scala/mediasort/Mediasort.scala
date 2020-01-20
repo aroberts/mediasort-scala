@@ -10,15 +10,16 @@ import cats.syntax.traverse._
 import cats.syntax.show._
 import cats.instances.list._
 
-object Mediasort {
+object Mediasort { // TODO extends IOApp {
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def fatal(prefix: String)(e: Throwable) = {
     scribe.error(List(prefix, strings.errorMessage(e)).mkString(" "))
     sys.exit(1)
   }
 
+  //  def run(args: List[String]) = {
   def main(args: Array[String]): Unit = {
-    val parsed = new CLIArgs(args.toIndexedSeq)
+    val parsed = new CLIArgs(args.toList)
 
     implicit val config = Config.load(parsed.config())
       .fold(fatal("Error parsing config:"), identity)

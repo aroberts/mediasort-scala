@@ -10,7 +10,6 @@ lazy val mediasort = (project in file("."))
     libraryDependencies ++= Seq(
       "org.rogach" %% "scallop" % "3.3.2",
       "com.outr" %% "scribe" % "2.7.10",
-      "com.lihaoyi" %% "os-lib" % "0.6.2",
 
       "io.circe" %% "circe-core" % "0.12.3",
       "io.circe" %% "circe-generic" % "0.12.3",

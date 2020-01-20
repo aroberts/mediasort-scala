@@ -1,9 +1,12 @@
 package mediasort.classify
 
-import os.Path
+import java.nio.file._
+import mediasort.paths
 
 case class Input(path: Path) {
-  lazy val mimedPaths = MimeType.mimedPaths(path)
-  lazy val mimeTypes = mimedPaths.map(_.map(_.mimeType))
-  lazy val expandedPaths = mimedPaths.map(_.map(_.path))
+  lazy val filename = path.getFileName.toString
+  lazy val files = paths.expandFiles(path)
+
+  lazy val mimedPaths = files.map(p => MimeType.MimedPath(p, MimeType(p)))
+  lazy val mimeTypes = mimedPaths.map(_.mimeType)
 }

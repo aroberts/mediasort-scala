@@ -1,12 +1,12 @@
 package mediasort.config
 
-import org.rogach.scallop._
-import os.Path
-import cats.syntax.either._
-import mediasort.{Mediasort, paths, strings}
-import CLIArgs._
+import java.nio.file.Path
 
-class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
+import org.rogach.scallop._
+import mediasort.Mediasort
+
+
+class CLIArgs(arguments: List[String]) extends ScallopConf(arguments) {
 
   version(s"mediasort v${Mediasort.version}")
   banner(
@@ -19,7 +19,7 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
   )
 
   val config = opt[Path]("config", descr = "path to config.yml", argName = "path", required = true)
-  val dryRun = opt[Boolean]("dry-run", descr = "don't make any filesystem changes")
+  val dryRun = opt[Boolean]("dry-run", descr = "log actions instead of performing them")
   val quiet = opt[Boolean]("quiet", descr = "less logging")
   val verbose = opt[Boolean]("verbose", descr = "more logging")
   val path = trailArg[Path]("path", descr = "path to act on", required = false)
@@ -27,10 +27,4 @@ class CLIArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
   mutuallyExclusive(quiet, verbose)
 
   verify
-}
-
-object CLIArgs {
-  implicit val convertPath: ValueConverter[Path] = implicitly[ValueConverter[String]].flatMap(p =>
-    Either.catchNonFatal(Some(paths.path(p))).leftMap(strings.errorMessage)
-  )
 }

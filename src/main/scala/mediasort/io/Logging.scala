@@ -16,9 +16,7 @@ object Logging {
 
     val logFormat = formatter"$date $level $message"
     val console = LogHandler(formatter = logFormat, minimumLevel = Some(logLevel))
-    val file = cfg.logPath.map(p => console.withWriter(
-      FileWriter().path(_ => p.toNIO).append
-    ))
+    val file = cfg.logPath.map(p => console.withWriter(FileWriter().path(_ => p).append))
 
     List(Some(console), file).flatten
       .foldLeft(scribe.Logger.root.clearHandlers().clearModifiers())(_.withHandler(_))

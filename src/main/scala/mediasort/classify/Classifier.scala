@@ -11,7 +11,6 @@ case class Classifier(
   mediaType: MediaType,
   criteria: List[ClassifierStep]
 ) {
-  lazy val media: MediaType = ???
   def classification(i: Input)(implicit cfg: Config): IO[Option[Classification]] =
     Monad[IO].tailRecM((Option(Classification.none(i.path)), criteria)) {
       // No further steps are evaluated if the current classification falls to None

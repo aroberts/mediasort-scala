@@ -10,9 +10,7 @@ import io.circe.generic.extras.semiauto._
 import mediasort.classify.MimeType.MimedPath
 import mediasort.config.Config
 import mediasort.config.Config.jsonCfg
-import mediasort.io.IMDB
 import mediasort.strings
-import os._
 
 import scala.util.matching.Regex
 

@@ -1,10 +1,11 @@
 package mediasort.classify
 
+import java.nio.file.Path
+
 import cats.Show
 import cats.syntax.option._
 import mediasort.config.Config
 import mediasort.strings._
-import os.Path
 
 case class Classification(
     path: Path,
@@ -13,9 +14,9 @@ case class Classification(
     name: Option[String] = None
 ) {
   lazy val normalizedName = name.map(normalize)
-  lazy val normalizedNameOrDir = normalizedName.getOrElse(normalize(path.last))
+  lazy val normalizedNameOrDir = normalizedName.getOrElse(normalize(path.getFileName.toString))
 
-  lazy val label = s"${path.toString} ${mediaType.value}($score)${name.map(" " + _).getOrElse("")}"
+  lazy val label = s"$path ${mediaType.value}($score)${name.map(" " + _).getOrElse("")}"
 
   def toMultiLineString = List(
     s"Path: $path".some,

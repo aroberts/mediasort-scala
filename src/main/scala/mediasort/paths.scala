@@ -1,17 +1,17 @@
 package mediasort
 
-import cats.effect.IO
-import os.Path
+import java.nio.file.{FileVisitOption, Files, Path}
+
+import cats.effect.{Blocker, IO}
+import fs2.io.file
+import fs2.Stream
+import mediasort.io.contextShift
 
 package object paths {
-
-  def expandFiles(p: Path): IO[IndexedSeq[Path]] = IO(
-    if (os.isDir(p)) os.walk(p).filter(os.isFile) else IndexedSeq(p)
-  )
-  def expandDirs(p: Path): IO[IndexedSeq[Path]] = IO(
-    if (os.isDir(p)) os.walk(p).filter(os.isDir) else IndexedSeq()
+  def walk(p: Path) = Stream.resource(Blocker[IO]).flatMap(b =>
+    file.walk[IO](b, p, Seq(FileVisitOption.FOLLOW_LINKS))
   )
 
-  def path(in: String) = Path(in, os.pwd)
-
+  def expandFiles(p: Path) = walk(p).filter(Files.isRegularFile(_))
+  def expandDirs(p: Path) = walk(p).filter(Files.isDirectory(_))
 }
