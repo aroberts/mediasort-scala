@@ -6,6 +6,10 @@ import io.circe._
 import io.circe.generic.extras.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
+import cats.effect.{Blocker, ContextShift, IO}
+import fs2.Stream
+import fs2.io.file
+import fs2.text
 import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
 import mediasort.classify.{Classification, Classifier, MediaType}
@@ -61,9 +65,14 @@ object Config {
   implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder
   implicit val decodeEmailConf: Decoder[EmailConfig] = deriveConfiguredDecoder
 
-  // TODO: should this be async?
-  def load(path: Path) =
-    Either.catchNonFatal(Source.fromFile(path.toAbsolutePath.toFile, "UTF-8").mkString)
-      .flatMap(parser.parse)
-      .flatMap(_.as[Config])
+  def load(path: Path)(implicit cs: ContextShift[IO]): Stream[IO, Either[Throwable, Config]] =
+    Stream.resource(Blocker[IO]).flatMap { blocker =>
+      file.readAll[IO](path, blocker, 4096)
+        // utf8 chunks
+        .through(text.utf8Decode[IO])
+        // singleton stream of file content string
+        .reduce(_.concat(_))
+        // parse yaml/json
+        .map(s => parser.parse(s).flatMap(_.as[Config]))
+    }
 }

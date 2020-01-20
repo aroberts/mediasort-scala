@@ -8,7 +8,7 @@ lazy val mediasort = (project in file("."))
     name := "mediasort",
     fork in run := true,
     libraryDependencies ++= Seq(
-      "org.rogach" %% "scallop" % "3.3.2",
+      "com.monovore" %% "decline" % "1.0.0",
       "com.outr" %% "scribe" % "2.7.10",
 
       "io.circe" %% "circe-core" % "0.12.3",
