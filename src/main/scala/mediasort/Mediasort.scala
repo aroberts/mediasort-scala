@@ -8,7 +8,10 @@ import cats.syntax.foldable._
 import cats.syntax.either._
 import cats.syntax.traverse._
 import cats.syntax.show._
+import cats.syntax.monadError._
 import cats.instances.list._
+
+import fs2.Stream
 
 import cats.syntax.functor._
 
@@ -19,32 +22,24 @@ object Mediasort extends IOApp {
     sys.exit(1)
   }
 
-  def program(args: CLIArgs): IO[Either[String, Unit]] = {
-   IO(Right(println(args.toString)))
-  }
+  def program(args: CLIArgs): Stream[IO, Unit] = for {
+    cfg <- Config.load(args.configPath)
+  } yield ???
 
   def run(args: List[String]) = {
     CLIArgs.parser.parse(args) match {
       case Left(help) => IO(System.err.println(help)).as(ExitCode.Success)
       case Right(other) => other match {
         case Left(v) => IO(System.err.println(s"mediasort v$version")).as(ExitCode.Success)
-        case Right(parsed) => program(parsed).flatMap(_.fold(
-            e => IO(System.err.println(e)).as(ExitCode.Error),
-            u => IO.pure(u).as(ExitCode.Success)
-          )
-        )
+        case Right(parsed) =>
+          program(parsed)
+            .compile
+            .drain
+            .as(ExitCode.Success)
+            .handleErrorWith(e => IO(System.err.println(e.getMessage)).as(ExitCode.Error))
       }
     }
   }
-
-
-
-//      val parsed = new CLIArgs(args)
-//
-//      for {
-//        cfg <- Config.load(parsed.config())
-//      } yield ???
-
 
 //    implicit val config = Config.load(parsed.config())
 //      .fold(fatal("Error parsing config:"), identity)

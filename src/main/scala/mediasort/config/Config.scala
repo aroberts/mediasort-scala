@@ -6,6 +6,7 @@ import io.circe._
 import io.circe.generic.extras.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
+import cats.syntax.show._
 import cats.effect.{Blocker, ContextShift, IO}
 import fs2.Stream
 import fs2.io.file
@@ -15,9 +16,9 @@ import mediasort.action.Matcher
 import mediasort.classify.{Classification, Classifier, MediaType}
 import mediasort.config.Config._
 import mediasort.io.{Email, OMDB, Plex}
-import mediasort.{Mediasort, paths}
+import mediasort.Mediasort
+import mediasort.Errors._
 
-import scala.io.Source
 
 case class Config(
     logPath: Option[Path],
@@ -65,7 +66,7 @@ object Config {
   implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder
   implicit val decodeEmailConf: Decoder[EmailConfig] = deriveConfiguredDecoder
 
-  def load(path: Path)(implicit cs: ContextShift[IO]): Stream[IO, Either[Throwable, Config]] =
+  def load(path: Path)(implicit cs: ContextShift[IO]): Stream[IO, Config] =
     Stream.resource(Blocker[IO]).flatMap { blocker =>
       file.readAll[IO](path, blocker, 4096)
         // utf8 chunks
@@ -73,6 +74,12 @@ object Config {
         // singleton stream of file content string
         .reduce(_.concat(_))
         // parse yaml/json
-        .map(s => parser.parse(s).flatMap(_.as[Config]))
+        .map(parse)
+        // halt the stream on error
+        .rethrow
     }
+
+  def parse(data: String) =
+    parser.parse(data).flatMap(_.as[Config])
+      .leftMap(reportPrefix("error parsing config"))
 }
