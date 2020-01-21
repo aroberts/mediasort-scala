@@ -10,6 +10,7 @@ import cats.syntax.traverse._
 import cats.syntax.show._
 import cats.syntax.monadError._
 import cats.instances.list._
+import mediasort.io.Logging._
 
 import fs2.Stream
 
@@ -17,11 +18,6 @@ import cats.syntax.functor._
 
 object Mediasort extends IOApp {
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
-  def fatal(prefix: String)(e: Throwable) = {
-    scribe.error(List(prefix, strings.errorMessage(e)).mkString(" "))
-    sys.exit(1)
-  }
-
   def program(args: CLIArgs): Stream[IO, Unit] = for {
     cfg <- Config.load(args.configPath)
   } yield ???
@@ -30,7 +26,7 @@ object Mediasort extends IOApp {
     CLIArgs.parser.parse(args) match {
       case Left(help) => IO(System.err.println(help)).as(ExitCode.Success)
       case Right(other) => other match {
-        case Left(v) => IO(System.err.println(s"mediasort v$version")).as(ExitCode.Success)
+        case Left(_) => IO(System.err.println(s"mediasort v$version")).as(ExitCode.Success)
         case Right(parsed) =>
           program(parsed)
             .compile

@@ -16,7 +16,6 @@ import mediasort.action.Matcher
 import mediasort.classify.{Classification, Classifier, MediaType}
 import mediasort.config.Config._
 import mediasort.io.{Email, OMDB, Plex}
-import mediasort.Mediasort
 import mediasort.Errors._
 
 
@@ -34,10 +33,10 @@ case class Config(
   lazy val emailAPI = apiFromConfig(email, new Email(_), "email", "email notification")
   val unclassified = unclassifiedMediaType.getOrElse(MediaType("other"))
 
-  def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String) =
-    cfg.map(f).getOrElse(Mediasort.fatal("")(
-      new Exception(s"configure $cfgName section to use $apiName capabilities"))
-    )
+  def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String): IO[Api] =
+    cfg.map(f).fold[IO[Api]](
+      IO.raiseError(report(s"configure $cfgName section to use $apiName capabilities"))
+    )(IO.pure)
 
   def actionsFor(c: Classification) = actions.filter(m =>
     m.mediaType == c.mediaType && m.confidence.forall(_ <= c.score)
