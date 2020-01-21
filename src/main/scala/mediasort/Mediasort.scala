@@ -8,9 +8,8 @@ import cats.syntax.foldable._
 import cats.syntax.either._
 import cats.syntax.traverse._
 import cats.syntax.show._
-import cats.syntax.monadError._
 import cats.instances.list._
-import mediasort.io.Logging._
+import mediasort.Errors._
 
 import fs2.Stream
 
@@ -28,11 +27,13 @@ object Mediasort extends IOApp {
       case Right(other) => other match {
         case Left(_) => IO(System.err.println(s"mediasort v$version")).as(ExitCode.Success)
         case Right(parsed) =>
+          Logging.configure(parsed.logLevel, parsed.logPath)
+
           program(parsed)
             .compile
             .drain
             .as(ExitCode.Success)
-            .handleErrorWith(e => IO(System.err.println(e.getMessage)).as(ExitCode.Error))
+            .handleErrorWith(e => IO(scribe.error(e.show)).as(ExitCode.Error))
       }
     }
   }

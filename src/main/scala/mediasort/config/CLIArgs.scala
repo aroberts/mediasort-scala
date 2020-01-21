@@ -8,9 +8,10 @@ import com.monovore.decline._
 import cats.syntax.apply._
 
 
-case class CLIArgs(configPath: Path, logLevel: Level, dryRun: Boolean, inputPath: Path)
+case class CLIArgs(configPath: Path, logPath: Option[Path], logLevel: Level, dryRun: Boolean, inputPath: Path)
 object CLIArgs {
   val config = Opts.option[Path]("config", help = "path to config.yml", short = "c", metavar = "path")
+  val log = Opts.option[Path]("log", help = "log here as well as stdout", short = "l", metavar = "path").orNone
   val dryRun = Opts.flag("dry-run", help = "log actions instead of performing them").orFalse
   val quiet = Opts.flag("quiet", help = "less logging", short = "q").orFalse
   val verbose = Opts.flag("verbose", help = "more logging", short = "v").orFalse
@@ -26,6 +27,6 @@ object CLIArgs {
 
   val parser = Command("mediasort", "Act on filesystem paths based on rules") {
     version.map(Left(_)) orElse
-      (config, logLevel, dryRun, path).mapN(CLIArgs.apply).map(Right(_))
+      (config, log, logLevel, dryRun, path).mapN(CLIArgs.apply).map(Right(_))
   }
 }

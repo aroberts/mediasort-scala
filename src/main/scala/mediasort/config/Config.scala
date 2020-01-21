@@ -20,7 +20,6 @@ import mediasort.Errors._
 
 
 case class Config(
-    logPath: Option[Path],
     unclassifiedMediaType: Option[MediaType],
     omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
@@ -59,7 +58,6 @@ object Config {
     .withSnakeCaseMemberNames
     .withSnakeCaseConstructorNames
 
-  implicit val decodePath: Decoder[Path] = Decoder[String].map(Paths.get(_))
   implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
   implicit val decodeOMDBConf: Decoder[OMDBConfig] = deriveConfiguredDecoder
   implicit val decodePlexConf: Decoder[PlexConfig] = deriveConfiguredDecoder
