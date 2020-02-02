@@ -74,7 +74,6 @@ object paths {
       dryRun: Boolean,
       flags: Seq[CopyOption] = Seq.empty
   ) = fileTreeOp(src, dst, perms, preserveDir, dryRun)("copying",
-    // TODO: do these walk calls preserve the dir structure right?
     (b, src) => file.walk[IO](b, src).filter(paths.extensionFilter(only, exclude)),
     (b, cur, tgt) => file.copy[IO](b, cur, tgt, flags)
   )
