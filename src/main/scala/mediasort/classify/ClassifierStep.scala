@@ -32,7 +32,7 @@ sealed trait ClassifierStep {
 }
 
 object ClassifierStep {
-  sealed trait BasicClassifierStep {
+  sealed trait BasicClassifierStep extends ClassifierStep {
     def classify(mediaType: MediaType, i: Input): IO[Option[Classification]]
   }
 
