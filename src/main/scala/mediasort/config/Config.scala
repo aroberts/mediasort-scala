@@ -1,8 +1,8 @@
 package mediasort.config
 
 import java.nio.file.{Path, Paths}
+import java.nio.file.attribute.{PosixFilePermission => PFP}
 
-import cats.effect.concurrent.Ref
 import io.circe._
 import io.circe.generic.extras.semiauto._
 import io.circe.yaml.parser
@@ -19,6 +19,7 @@ import mediasort.classify.{Classification, Classifier, Input, MediaType}
 import mediasort.config.Config._
 import mediasort.io.{Email, OMDB, Plex}
 import mediasort.errors._
+import mediasort.paths
 
 import scala.util.Try
 import scala.util.matching.Regex
@@ -73,6 +74,8 @@ object Config {
   implicit val decodeEmailConf: Decoder[EmailConfig] = deriveConfiguredDecoder
 
   implicit val decodeRegex: Decoder[Regex] = Decoder[String].emapTry(s => Try(s.r))
+  implicit val decodePermSet: Decoder[Set[PFP]] = Decoder[Int].emap(paths.posixFilePermissions)
+  implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(Paths.get(s)))
 
   def load(path: Path)(implicit cs: ContextShift[IO]): Stream[IO, Config] =
     Stream.resource(Blocker[IO]).flatMap { blocker =>

@@ -1,5 +1,7 @@
 package mediasort.action
 
+import java.nio.file.{Files, Path}
+
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.instances.list._
@@ -8,12 +10,10 @@ import cats.syntax.show._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.classify.Classification
-import mediasort.config.Config
 import mediasort.config.Config._
 import mediasort.io.{Email, Plex}
 import mediasort.{fuzz, paths, strings}
-
-import scala.util.Try
+import java.nio.file.attribute.{PosixFilePermission => PFP}
 
 
 sealed trait Action
@@ -31,55 +31,36 @@ object Action {
     def perform(input: Classification, dryRun: Boolean, plex: Plex): IO[Unit]
   }
 
-  case object Noop extends BasicAction {
-    override def perform(input: Classification, dryRun: Boolean) = IO.pure(())
+
+  case class CopyTo(destination: Path, permissions: Option[Set[PFP]]) extends BasicAction {
+    def perform(input: Classification, dryRun: Boolean) =
+      paths.copy(input.path, destination, None, dryRun)
   }
 
+  case class CopyToMatchingSubdir(
+      destination: Path,
+      permissions: Option[Set[PFP]],
+      matchCutoff: Option[Double]
+  ) extends BasicAction {
+    def scoreSubdirs(root: Path, name: String) = for {
+      dir <- paths.list(root, Files.isDirectory(_))
+      dirName = dir.getFileName.toString
+      ratio = fuzz.ratio(name, strings.normalize(dirName))
+    } yield (dir, ratio)
 
+    def perform(input: Classification, dryRun: Boolean) = {
+      val name = input.normalizedNameOrDir
 
-  implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
-//  implicit val decodePermSet: Decoder[PermSet] = Decoder[Int].emapTry(i =>
-//    Try(PermSet(Integer.parseInt(i.toString, 8)))
-//  )
+      val target = scoreSubdirs(destination, name)
+        .reduce((l, r) => if (l._2 >= r._2) l else r)
+        .filter(t => matchCutoff.forall(_ <= t._2))
+        .map(_._1)
+        .compile.last
+        .map(_.getOrElse(destination.resolve(name)))
 
-//  def copyInto(destination: Path, permissions: Option[PermSet], dryRun: Boolean)(input: Path) = {
-//    val res: Path = destination / input.last
-//
-//    scribe.info(s"copying '$input' to '$destination'")
-//
-//    if (dryRun) IO.pure(res) else IO {
-//      os.copy.into(input, destination, createFolders = true)
-//      permissions.foreach(os.perms.set(input, _))
-//      res
-//    }
-//  }
-//
-//  case class CopyTo(destination: Path, permissions: Option[PermSet]) extends Action {
-//    def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) =
-//      copyInto(destination, permissions, dryRun)(input.path).map(p => input.copy(path = p))
-//  }
-//
-//  case class CopyToMatchingSubdir(
-//      destination: Path,
-//      permissions: Option[PermSet],
-//      matchCutoff: Option[Double]
-//  ) extends Action {
-//    def chooseSubdir(subdirs: IndexedSeq[Path], name: String) =
-//      subdirs.map(s => s -> fuzz.ratio(name, strings.normalize(s.last)))
-//        .filter(_._2 > matchCutoff.getOrElse(.9))
-//        .sortBy(_._2)(Ordering.Double.IeeeOrdering.reverse)
-//        .headOption
-//        .map(_._1)
-//
-//    def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = {
-//      val name = input.normalizedNameOrDir
-//
-//      paths.expandDirs(destination)
-//        .map(chooseSubdir(_, name).getOrElse(destination / name))
-//        .flatMap(copyInto(_, permissions, dryRun)(input.path))
-//        .map(p => input.copy(path = p))
-//    }
-//  }
+      target.flatMap(dst => paths.copy(input.path, dst, permissions, dryRun))
+    }
+  }
 //
 //  case class CopyContentsTo(
 //      destination: Path,
@@ -126,5 +107,6 @@ object Action {
 //    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) =
 //      cfg.emailAPI.send(to, subject, bodyReplacements(input)).map(_ => input)
 //  }
+  implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
 }
 
