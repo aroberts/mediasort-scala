@@ -28,12 +28,15 @@ case class Classification(
 }
 
 object Classification {
-  def mergeByType(in: List[Classification]): Iterable[Classification] = in.groupBy(c => (c.path, c.mediaType))
-    .values
-    .map(
-      _.sortBy(_.score)(Ordering[Int].reverse)
-        .reduce((l, r) => Classification(l.path, l.mediaType, score(l.score + r.score), l.name orElse r.name))
-    )
+  def mergeByType(in: List[Classification]): List[Classification] =
+    in.groupBy(c => (c.path, c.mediaType))
+      .values
+      .map(
+        _.sortBy(_.score)(Ordering[Int].reverse)
+          .reduce((l, r) =>
+            Classification(l.path, l.mediaType, score(l.score + r.score), l.name orElse r.name)
+          )
+      ).toList
 
   def none(path: Path)(implicit cfg: Config) = Classification(path, cfg.unclassified, 0)
 

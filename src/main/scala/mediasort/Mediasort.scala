@@ -22,7 +22,12 @@ object Mediasort extends IOApp {
     omdb <- Stream.eval(cfg.omdbRef)
 
     classifiers = cfg.classifiers.filter(_.applies(input))
-    classifications = Classifier.classifications(input, classifiers, omdb).map(Classification.mergeByType)
+    classifications = Classifier.classifications(input, classifiers, omdb)
+      .map(Classification.mergeByType)
+
+    classification <- Stream.evals(classifications)
+
+    action <- Stream.emits(cfg.actionsFor(classification))
 
   } yield ()
 

@@ -79,10 +79,9 @@ class Plex(cfg: PlexConfig) {
       refresh <- refreshSectionById(idInt, force)
     } yield refresh
 
+    // or fail on errors?
     res.leftMap(e => scribe.error(s"[PLEX] ${errorMessage(e)}"))
-      // or fail on errors?
-      .toOption
-      .value
+      .value.map(_ => ()) // discard output
   }
 
 }

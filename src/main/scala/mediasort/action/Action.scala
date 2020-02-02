@@ -88,25 +88,38 @@ object Action {
 //    }
 //  }
 //
-//  case class RefreshPlexSection(
-//      sectionName: String,
-//      force: Option[Boolean]
-//  ) extends Action {
-//    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = if (dryRun) {
-//      scribe.info(s"skipping update of plex section '$sectionName'")
-//      IO.pure(input)
-//    } else cfg.plexAPI.refreshSection(sectionName, force.getOrElse(false)).map(_ => input)
-//  }
-//
-//  case class EmailNotify(to: String, subject: String, body: String) extends Action {
-//    def bodyReplacements(input: Classification) = body
-//      .replaceAllLiterally("{}", input.show)
-//      .replaceAllLiterally("{debug}", input.toString)
-//      .replaceAllLiterally("{long}", input.toMultiLineString)
-//
-//    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) =
-//      cfg.emailAPI.send(to, subject, bodyReplacements(input)).map(_ => input)
-//  }
+  case class RefreshPlexSection(sectionName: String, force: Option[Boolean]) extends PlexAction {
+    def perform(input: Classification, dryRun: Boolean, plex: Plex) = {
+      scribe.info(s"updating plex section '$sectionName'")
+      if (dryRun) IO.pure(()) else plex.refreshSection(sectionName, force.getOrElse(false))
+    }
+  }
+
+  case class EmailNotify(to: String, subject: String, body: String) extends EmailAction {
+    def bodyReplacements(input: Classification) = body
+      .replaceAllLiterally("{}", input.show)
+      .replaceAllLiterally("{debug}", input.toString)
+      .replaceAllLiterally("{long}", input.toMultiLineString)
+
+    def perform(input: Classification, dryRun: Boolean, email: Email) = {
+      scribe.info(s"sending email to '$to'")
+      if (dryRun) IO.pure(())
+      else email.send(to, subject, bodyReplacements(input))
+    }
+  }
+
   implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
+
+  def perform(
+      a: Action,
+      in: Classification,
+      dryRun: Boolean,
+      email: IO[Email],
+      plex: IO[Plex]
+  ) = a match {
+    case r: BasicAction => r.perform(in, dryRun)
+    case r: PlexAction => plex.flatMap(r.perform(in, dryRun, _))
+    case r: EmailAction => email.flatMap(r.perform(in, dryRun, _))
+  }
 }
 
