@@ -35,6 +35,7 @@ object paths {
       src: Path,
       dst: Path,
       perms: Option[Set[PFP]],
+      preserveDir: Boolean,
       dryRun: Boolean
   )(
       gerund: String,
@@ -43,8 +44,9 @@ object paths {
   ) = (for {
     b <- Stream.resource(Blocker[IO])
     _ = scribe.info(s"$gerund '$src' to '$dst'")
+    targetDir = if (preserveDir && Files.isDirectory(src)) dst.resolve(src.getFileName) else dst
     currentFile <- generate(b, src)
-    targetFile = dst.resolve(src.relativize(currentFile))
+    targetFile = targetDir.resolve(src.relativize(currentFile))
     _ = scribe.debug(s" - $gerund '$currentFile' to '$targetFile'")
     _ <- Stream.eval(if (dryRun) IO.pure(()) else operate(b, currentFile, targetFile))
     _ <- perms.filter(_ => !dryRun).traverse(p => Stream.eval(setPermissions(b, targetFile, p)))
@@ -68,9 +70,10 @@ object paths {
       perms: Option[Set[PFP]],
       only: Option[NonEmptyList[String]],
       exclude: Option[NonEmptyList[String]],
+      preserveDir: Boolean,
       dryRun: Boolean,
       flags: Seq[CopyOption] = Seq.empty
-  ) = fileTreeOp(src, dst, perms, dryRun)("copying",
+  ) = fileTreeOp(src, dst, perms, preserveDir, dryRun)("copying",
     // TODO: do these walk calls preserve the dir structure right?
     (b, src) => file.walk[IO](b, src).filter(paths.extensionFilter(only, exclude)),
     (b, cur, tgt) => file.copy[IO](b, cur, tgt, flags)
@@ -82,8 +85,9 @@ object paths {
       perms: Option[Set[PFP]],
       only: Option[NonEmptyList[String]],
       exclude: Option[NonEmptyList[String]],
+      preserveDir: Boolean,
       dryRun: Boolean
-  ) = fileTreeOp(src, dst, perms, dryRun)("linking",
+  ) = fileTreeOp(src, dst, perms, preserveDir, dryRun)("linking",
     (b, src) => file.walk[IO](b, src)
       .filter(Files.isRegularFile(_, LinkOption.NOFOLLOW_LINKS))
       .filter(paths.extensionFilter(only, exclude)),

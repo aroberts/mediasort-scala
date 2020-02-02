@@ -15,9 +15,7 @@ import mediasort.io.{Email, Plex}
 import mediasort.{fuzz, paths, strings}
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 
-
 sealed trait Action
-
 object Action {
   sealed trait BasicAction extends Action {
     def perform(input: Classification, dryRun: Boolean): IO[Unit]
@@ -37,13 +35,14 @@ object Action {
       permissions: Option[Set[PFP]],
       only: Option[NonEmptyList[String]],
       exclude: Option[NonEmptyList[String]],
+      preserveDir: Option[Boolean],
       link: Option[Boolean]
   ) extends BasicAction {
     def perform(input: Classification, dryRun: Boolean) =
       if (link.getOrElse(false))
-        paths.link(input.path, destination, permissions, only, exclude, dryRun)
+        paths.link(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
       else
-        paths.copy(input.path, destination, permissions, only, exclude, dryRun)
+        paths.copy(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
   }
 
   case class CopyToMatchingSubdir(
@@ -52,6 +51,7 @@ object Action {
       matchCutoff: Option[Double],
       only: Option[NonEmptyList[String]],
       exclude: Option[NonEmptyList[String]],
+      preserveDir: Option[Boolean],
       link: Option[Boolean]
   ) extends BasicAction {
     def scoreSubdirs(root: Path, name: String) = for {
@@ -75,9 +75,9 @@ object Action {
 
       target.flatMap(dst =>
         if (link.getOrElse(false))
-          paths.link(input.path, dst, permissions, only, exclude, dryRun)
+          paths.link(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
         else
-          paths.copy(input.path, dst, permissions, only, exclude, dryRun)
+          paths.copy(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
       )
     }
   }

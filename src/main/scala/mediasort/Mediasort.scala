@@ -1,17 +1,15 @@
 package mediasort
 
-import mediasort.classify.{Classification, Classifier, Input, MediaType, MimeType}
+import mediasort.classify.{Classification, Classifier, Input}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.io.Logging
 import cats.effect._
-import cats.syntax.foldable._
-import cats.syntax.either._
-import cats.syntax.traverse._
 import cats.syntax.show._
 import cats.instances.list._
 import mediasort.errors._
 import fs2.Stream
 import cats.syntax.functor._
+import mediasort.action.Action
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift
@@ -21,7 +19,10 @@ object Mediasort extends IOApp {
     cfg <- Config.load(args.configPath)
     input <- Stream.eval(Input(args.inputPath))
 
-    omdb <- Stream.eval(cfg.omdbRef)
+    // memoized apis
+    omdb <- Stream.eval(cfg.omdbIO)
+    plex <- Stream.eval(cfg.plexIO)
+    email <- Stream.eval(cfg.emailIO)
 
     classifiers = cfg.classifiers.filter(_.applies(input))
     _ = scribe.debug(s"running ${classifiers.size} classifiers")
@@ -31,9 +32,8 @@ object Mediasort extends IOApp {
     classification <- Stream.evals(classifications)
     _ = scribe.debug(classification.show)
 
-//    action <- Stream.emits(cfg.actionsFor(classification))
-    // TODO: perform action
-
+    action <- Stream.emits(cfg.actionsFor(classification))
+    _ <- Stream.eval(Action.perform(action, classification, args.dryRun, email, plex))
   } yield ()
 
   def run(args: List[String]) = {

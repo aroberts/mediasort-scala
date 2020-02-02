@@ -33,12 +33,11 @@ case class Config(
     classifiers: List[Classifier],
     actions: List[Matcher]
 ) {
-  val omdbAPI = apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB")
-  val plexAPI = apiFromConfig(plex, new Plex(_), "plex", "Plex")
-  val emailAPI = apiFromConfig(email, new Email(_), "email", "email notification")
   val unclassified = unclassifiedMediaType.getOrElse(MediaType("other"))
 
-  val omdbRef = Async.memoize(apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB"))
+  val omdbIO = Async.memoize(apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB"))
+  val plexIO = Async.memoize(apiFromConfig(plex, new Plex(_), "plex", "Plex"))
+  val emailIO = Async.memoize(apiFromConfig(email, new Email(_), "email", "email notification"))
 
   def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String): IO[Api] =
     cfg.map(f).fold[IO[Api]](
