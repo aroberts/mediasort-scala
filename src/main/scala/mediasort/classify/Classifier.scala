@@ -11,7 +11,7 @@ import mediasort.config.Config
 import mediasort.config.Config.jsonCfg
 import ClassifierStep._
 import fs2.{Chunk, Stream}
-import mediasort.{Errors, strings}
+import mediasort.{errors, strings}
 import mediasort.io.OMDB
 
 import scala.util.matching.Regex

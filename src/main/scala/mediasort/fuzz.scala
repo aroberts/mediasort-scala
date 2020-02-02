@@ -2,7 +2,7 @@ package mediasort
 
 import scala.math.min
 
-package object fuzz {
+object fuzz {
 
   // levenshtein with replacement cost of 2, insertion/deletion cost of 1
   def levenshtein[A](lhs: Iterable[A], rhs: Iterable[A]): Int =

@@ -15,7 +15,7 @@ import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.config.Config
 import mediasort.config.Config._
-import mediasort.Errors._
+import mediasort.errors._
 import mediasort.{paths, strings}
 import mediasort.ops._
 import fs2._

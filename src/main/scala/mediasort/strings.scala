@@ -6,7 +6,7 @@ import sttp.client.{DeserializationError, HttpError}
 
 import scala.annotation.tailrec
 
-package object strings {
+object strings {
   // from https://gist.github.com/sidharthkuruvila/3154845#gistcomment-2622928
   def underscore(in: String) = {
     @tailrec

@@ -10,25 +10,33 @@ import io.circe.generic.extras.semiauto._
 import mediasort.classify.Classification
 import mediasort.config.Config
 import mediasort.config.Config._
+import mediasort.io.{Email, Plex}
 import mediasort.{fuzz, paths, strings}
 
 import scala.util.Try
 
-// include state necessary?
-//sealed trait Action[A] {
-//  def perform(input: Classification, state: A): IO[Classification]
-//}
-// should be able to serialize/deserialize, because there's no A value, it's
-// being passed into the method
 
+sealed trait Action
 
-sealed trait Action {
-  def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config): IO[Classification]
-}
 object Action {
-  case object Placeholder extends Action {
-    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = ???
+  sealed trait BasicAction extends Action {
+    def perform(input: Classification, dryRun: Boolean): IO[Unit]
   }
+
+  sealed trait EmailAction extends Action {
+    def perform(input: Classification, dryRun: Boolean, email: Email): IO[Unit]
+  }
+
+  sealed trait PlexAction extends Action {
+    def perform(input: Classification, dryRun: Boolean, plex: Plex): IO[Unit]
+  }
+
+  case object Noop extends BasicAction {
+    override def perform(input: Classification, dryRun: Boolean) = IO.pure(())
+  }
+
+
+
   implicit val decodeAction: Decoder[Action] = deriveConfiguredDecoder
 //  implicit val decodePermSet: Decoder[PermSet] = Decoder[Int].emapTry(i =>
 //    Try(PermSet(Integer.parseInt(i.toString, 8)))

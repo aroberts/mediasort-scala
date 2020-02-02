@@ -15,9 +15,9 @@ import fs2.{Chunk, Pull, Stream}
 package object ops {
   implicit class RegexMatchOps(m: Regex.Match) {
     private def rawSafeGroup(i: Int) = Either.catchNonFatal(m.group(i))
-    def safeGroup(i: Int) = rawSafeGroup(i).leftMap(Errors.report)
+    def safeGroup(i: Int) = rawSafeGroup(i).leftMap(errors.report)
     def safeGroup(prefix: String)(i: Int) =
-      rawSafeGroup(i).leftMap(Errors.reportPrefix(prefix))
+      rawSafeGroup(i).leftMap(errors.reportPrefix(prefix))
   }
 
 

@@ -9,7 +9,7 @@ import cats.syntax.either._
 import cats.syntax.traverse._
 import cats.syntax.show._
 import cats.instances.list._
-import mediasort.Errors._
+import mediasort.errors._
 import fs2.Stream
 import cats.syntax.functor._
 

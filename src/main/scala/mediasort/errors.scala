@@ -6,7 +6,7 @@ import _root_.io.circe.{DecodingFailure, ParsingFailure}
 import cats.syntax.show._
 import sttp.client.{DeserializationError, HttpError}
 
-object Errors {
+object errors {
   case class ReportingError(msg: String, cause: Option[Throwable]) extends Exception(msg, cause.orNull) {
     val report: String = List(
       Some(msg),

@@ -18,7 +18,7 @@ import mediasort.action.Matcher
 import mediasort.classify.{Classification, Classifier, Input, MediaType}
 import mediasort.config.Config._
 import mediasort.io.{Email, OMDB, Plex}
-import mediasort.Errors._
+import mediasort.errors._
 
 import scala.util.Try
 import scala.util.matching.Regex
