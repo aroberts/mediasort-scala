@@ -1,5 +1,13 @@
 package mediasort
 
+import cats.syntax.flatMap._
+import cats.syntax.applicative._
+import cats.syntax.functor._
+import cats.syntax.applicativeError._
+import cats.syntax.monadError._
+import cats.effect.{Async, Sync}
+import cats.effect.concurrent.{Ref, Semaphore}
+
 import scala.util.matching.Regex
 import cats.syntax.either._
 import fs2.{Chunk, Pull, Stream}
@@ -31,8 +39,5 @@ package object ops {
         }
       go(Nil, Chunk.empty[O], stream).stream
     }
-
-
   }
-
 }

@@ -14,6 +14,14 @@ import mediasort.{fuzz, paths, strings}
 
 import scala.util.Try
 
+// include state necessary?
+//sealed trait Action[A] {
+//  def perform(input: Classification, state: A): IO[Classification]
+//}
+// should be able to serialize/deserialize, because there's no A value, it's
+// being passed into the method
+
+
 sealed trait Action {
   def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config): IO[Classification]
 }

@@ -1,6 +1,6 @@
 package mediasort
 
-import mediasort.classify.{Classification, Input, MediaType, MimeType}
+import mediasort.classify.{Classification, Classifier, Input, MediaType, MimeType}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.io.Logging
 import cats.effect._
@@ -10,16 +10,21 @@ import cats.syntax.traverse._
 import cats.syntax.show._
 import cats.instances.list._
 import mediasort.Errors._
-
 import fs2.Stream
-
 import cats.syntax.functor._
 
 object Mediasort extends IOApp {
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def program(args: CLIArgs): Stream[IO, Unit] = for {
     cfg <- Config.load(args.configPath)
-  } yield ???
+    input <- Stream.eval(Input(args.inputPath))
+
+    omdb <- Stream.eval(cfg.omdbRef)
+
+    classifiers = cfg.classifiers.filter(_.applies(input))
+    classifications = Classifier.classifications(input, classifiers, omdb).map(Classification.mergeByType)
+
+  } yield ()
 
   def run(args: List[String]) = {
     CLIArgs.parser.parse(args) match {

@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import cats.Show
 import cats.syntax.option._
+import cats.syntax.semigroup._
 import mediasort.config.Config
 import mediasort.strings._
 
@@ -27,6 +28,13 @@ case class Classification(
 }
 
 object Classification {
+  def mergeByType(in: List[Classification]): Iterable[Classification] = in.groupBy(c => (c.path, c.mediaType))
+    .values
+    .map(
+      _.sortBy(_.score)(Ordering[Int].reverse)
+        .reduce((l, r) => Classification(l.path, l.mediaType, score(l.score + r.score), l.name orElse r.name))
+    )
+
   def none(path: Path)(implicit cfg: Config) = Classification(path, cfg.unclassified, 0)
 
   def score(i: Int) = scala.math.max(0, scala.math.min(i, 10))

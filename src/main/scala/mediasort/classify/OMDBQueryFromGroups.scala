@@ -3,10 +3,14 @@ package mediasort.classify
 import mediasort.io.OMDB
 
 import scala.util.matching.Regex.Match
-import cats.syntax.either._
+import cats.syntax.traverse._
+import cats.instances.option._
+import cats.instances.either._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.config.Config.jsonCfg
+
+import mediasort.ops._
 
 case class OMDBQueryFromGroups(
     imdbId: Option[Int],
@@ -14,13 +18,10 @@ case class OMDBQueryFromGroups(
     year: Option[Int],
     responseTypes: List[String]
 ) {
-  def extract(m: Match, group: Option[Int]): Either[String, Option[String]] =
-    Either.catchNonFatal(group.map(m.group)).leftMap(_ => s"Match did not contain group $group")
-
-  def toQuery(m: Match): Either[String, OMDB.Query] = for {
-      imdbVal <- extract(m, imdbId)
-      titleVal <- extract(m, title)
-      yearVal <- extract(m, year)
+  def toQuery(m: Match) = for {
+    imdbVal <- imdbId.traverse(m.safeGroup("error extracting imdb_id:"))
+    titleVal <- title.traverse(m.safeGroup("error extracting title:"))
+    yearVal <- year.traverse(m.safeGroup("error extracting year:"))
   } yield OMDB.Query(imdbVal, titleVal, yearVal)
 }
 
