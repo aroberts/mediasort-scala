@@ -32,15 +32,27 @@ object Action {
   }
 
 
-  case class CopyTo(destination: Path, permissions: Option[Set[PFP]]) extends BasicAction {
+  case class CopyTo(
+      destination: Path,
+      permissions: Option[Set[PFP]],
+      only: Option[NonEmptyList[String]],
+      exclude: Option[NonEmptyList[String]],
+      link: Option[Boolean]
+  ) extends BasicAction {
     def perform(input: Classification, dryRun: Boolean) =
-      paths.copy(input.path, destination, None, dryRun)
+      if (link.getOrElse(false))
+        paths.link(input.path, destination, permissions, only, exclude, dryRun)
+      else
+        paths.copy(input.path, destination, permissions, only, exclude, dryRun)
   }
 
   case class CopyToMatchingSubdir(
       destination: Path,
       permissions: Option[Set[PFP]],
-      matchCutoff: Option[Double]
+      matchCutoff: Option[Double],
+      only: Option[NonEmptyList[String]],
+      exclude: Option[NonEmptyList[String]],
+      link: Option[Boolean]
   ) extends BasicAction {
     def scoreSubdirs(root: Path, name: String) = for {
       dir <- paths.list(root, Files.isDirectory(_))
@@ -52,13 +64,21 @@ object Action {
       val name = input.normalizedNameOrDir
 
       val target = scoreSubdirs(destination, name)
+        // max the list based on score
         .reduce((l, r) => if (l._2 >= r._2) l else r)
+        // make sure the best hit is over the cutoff, if provided
         .filter(t => matchCutoff.forall(_ <= t._2))
         .map(_._1)
         .compile.last
+        // use default if no matches meet criteria
         .map(_.getOrElse(destination.resolve(name)))
 
-      target.flatMap(dst => paths.copy(input.path, dst, permissions, dryRun))
+      target.flatMap(dst =>
+        if (link.getOrElse(false))
+          paths.link(input.path, dst, permissions, only, exclude, dryRun)
+        else
+          paths.copy(input.path, dst, permissions, only, exclude, dryRun)
+      )
     }
   }
 //

@@ -1,6 +1,4 @@
-package mediasort.fuzz
-
-import mediasort.Spec
+package mediasort
 
 class FuzzSpec extends Spec {
 
@@ -10,7 +8,7 @@ class FuzzSpec extends Spec {
   }
 
   def assertRatio[A](lhs: Iterable[A], rhs: Iterable[A], ev: Double) =
-    compareDouble(ratio(lhs, rhs), ev, 3)
+    compareDouble(fuzz.ratio(lhs, rhs), ev, 3)
 
   it should "calculate ratio of 0 for unrelated strings" in assertRatio("asdf", "zxcv", 0)
   it should "calculate ratio for insertion" in assertRatio("ab", "a", .666)

@@ -1,5 +1,6 @@
 package mediasort
 
+import cats.data.NonEmptyList
 import cats.syntax.flatMap._
 import cats.syntax.applicative._
 import cats.syntax.functor._
@@ -39,5 +40,9 @@ package object ops {
         }
       go(Nil, Chunk.empty[O], stream).stream
     }
+  }
+
+  implicit class NelOps[A](nel: NonEmptyList[A]) {
+    def contains(a: A) = nel.head == a || nel.tail.contains(a)
   }
 }
