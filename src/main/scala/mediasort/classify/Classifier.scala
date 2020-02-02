@@ -25,6 +25,7 @@ case class Classifier(
 //    same for file tree patterns?
     criteria: List[ClassifierStep]
 ) {
+  // TODO: applies
   def applies(i: Input) = true //i.mimeTypes.something - patterns
 }
 

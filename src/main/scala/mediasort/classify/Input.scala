@@ -13,7 +13,7 @@ case class Input private (path: Path, files: List[Path], mimedPaths: List[MimeTy
 object Input {
   def apply(path: Path): IO[Input] =
     paths.expandFiles(path).compile.toList.map(files => Input(
-      path,
+      path.toAbsolutePath.normalize,
       files,
       // TODO: it would be great if this was also created on-demand rather than at construction time
       files.map(p => MimeType.MimedPath(p, MimeType(p)))

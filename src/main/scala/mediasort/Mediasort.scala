@@ -14,6 +14,8 @@ import fs2.Stream
 import cats.syntax.functor._
 
 object Mediasort extends IOApp {
+  implicit val cs: ContextShift[IO] = contextShift
+
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def program(args: CLIArgs): Stream[IO, Unit] = for {
     cfg <- Config.load(args.configPath)
@@ -22,12 +24,15 @@ object Mediasort extends IOApp {
     omdb <- Stream.eval(cfg.omdbRef)
 
     classifiers = cfg.classifiers.filter(_.applies(input))
+    _ = scribe.debug(s"running ${classifiers.size} classifiers")
     classifications = Classifier.classifications(input, classifiers, omdb)
       .map(Classification.mergeByType)
 
     classification <- Stream.evals(classifications)
+    _ = scribe.debug(classification.show)
 
-    action <- Stream.emits(cfg.actionsFor(classification))
+//    action <- Stream.emits(cfg.actionsFor(classification))
+    // TODO: perform action
 
   } yield ()
 

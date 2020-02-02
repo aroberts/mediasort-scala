@@ -4,4 +4,4 @@ project/target/
 *.log
 *.env
 
-config.yml
+*.yml

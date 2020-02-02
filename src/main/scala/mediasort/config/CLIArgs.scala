@@ -12,7 +12,7 @@ case class CLIArgs(configPath: Path, logPath: Option[Path], logLevel: Level, dry
 object CLIArgs {
   val config = Opts.option[Path]("config", help = "path to config.yml", short = "c", metavar = "path")
   val log = Opts.option[Path]("log", help = "log here as well as stdout", short = "l", metavar = "path").orNone
-  val dryRun = Opts.flag("dry-run", help = "log actions instead of performing them").orFalse
+  val dryRun = Opts.flag("dry-run", help = "log actions instead of performing them", short = "d").orFalse
   val quiet = Opts.flag("quiet", help = "less logging", short = "q").orFalse
   val verbose = Opts.flag("verbose", help = "more logging", short = "v").orFalse
   val version = Opts.flag("version", help = "print version and exit", visibility = Visibility.Partial)

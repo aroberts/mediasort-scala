@@ -53,7 +53,7 @@ object ClassifierStep {
   case class PathPatterns(patterns: List[MatcherWithScore]) extends BasicClassifierStep {
     def classify(mediaType: MediaType, i: Input) = {
       val stream = for {
-        mws <- Stream.evals(IO.pure(patterns))
+        mws <- Stream.evals(IO.pure(patterns)) // for io context
         matched <- Stream.emit(mws.pattern.findFirstMatchIn(i.path.toString)).unNone
         safeTitle = mws.titleGroup.traverse(matched.safeGroup("error extracting title:"))
         title <- Stream.eval(IO.pure(safeTitle)).rethrow

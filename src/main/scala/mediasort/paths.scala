@@ -12,7 +12,8 @@ import cats.instances.option._
 import scala.jdk.javaapi.CollectionConverters._
 import fs2.io.file
 import fs2.{Stream, text}
-import mediasort.io.contextShift
+
+import Mediasort.cs
 
 object paths {
   def walk(p: Path) = Stream.resource(Blocker[IO]).flatMap(b =>
