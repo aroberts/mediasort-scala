@@ -35,15 +35,6 @@ case class Config(
 ) {
   val unclassified = unclassifiedMediaType.getOrElse(MediaType("other"))
 
-  val omdbIO = Async.memoize(apiFromConfig(omdb, new OMDB(_), "omdb", "OMDB"))
-  val plexIO = Async.memoize(apiFromConfig(plex, new Plex(_), "plex", "Plex"))
-  val emailIO = Async.memoize(apiFromConfig(email, new Email(_), "email", "email notification"))
-
-  def apiFromConfig[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String): IO[Api] =
-    cfg.map(f).fold[IO[Api]](
-      IO.raiseError(report(s"configure $cfgName section to use $apiName capabilities"))
-    )(IO.pure)
-
   def actionsFor(c: Classification) = actions.filter(m =>
     m.mediaType == c.mediaType && m.confidence.forall(_ <= c.score)
   ).flatMap(_.perform)

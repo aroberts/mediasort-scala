@@ -2,7 +2,7 @@ package mediasort
 
 import mediasort.classify.{Classification, Classifier, Input}
 import mediasort.config.{CLIArgs, Config}
-import mediasort.io.Logging
+import mediasort.io.{Email, Logging, OMDB, Plex}
 import cats.effect._
 import cats.syntax.show._
 import cats.instances.list._
@@ -20,9 +20,9 @@ object Mediasort extends IOApp {
     input <- Stream.eval(Input(args.inputPath))
 
     // memoized apis
-    omdb <- Stream.eval(cfg.omdbIO)
-    plex <- Stream.eval(cfg.plexIO)
-    email <- Stream.eval(cfg.emailIO)
+    omdb <- Stream.eval(memoizedAPI(cfg.omdb, new OMDB(_), "omdb", "OMDB"))
+    plex <- Stream.eval(memoizedAPI(cfg.plex, new Plex(_), "plex", "Plex"))
+    email <- Stream.eval(memoizedAPI(cfg.email, new Email(_), "email", "email notification"))
 
     classifiers = cfg.classifiers.filter(_.applies(input))
     _ = scribe.debug(s"running ${classifiers.size} classifiers")
@@ -53,35 +53,8 @@ object Mediasort extends IOApp {
     }
   }
 
-//    implicit val config = Config.load(parsed.config())
-//      .fold(fatal("Error parsing config:"), identity)
-//
-//    Logging.configure(parsed)
-//
-//    // take path
-//    val input = Input(parsed.path())
-//    val dryRun = parsed.dryRun.getOrElse(false)
-//
-//    val proc = for {
-//      // get all classifications produced by conf
-//      classifications <- config.classifiers.traverse(_.classification(input)).map(_.flatten)
-//      _ = scribe.debug(classifications.show)
-//
-//      // choose highest score
-//      classification = classifications
-//        .sortBy(_.score)(Ordering[Int].reverse)
-//        .headOption
-//        .getOrElse(Classification.none(input.path))
-//
-//      _ = scribe.debug(classification.show)
-//
-//      // perform appropriate actions
-//      actions = config.actionsFor(classification)
-//      _ = scribe.debug(s"${actions.length} matching actions")
-//      _ <- actions.foldLeftM(classification)((c, action) => action.perform(dryRun)(c))
-//
-//    } yield ()
-//
-//    proc.attempt.unsafeRunSync.leftMap(fatal(s"Error sorting '$input':"))
-
+  def memoizedAPI[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String): IO[IO[Api]] =
+    Async.memoize(cfg.map(f).fold[IO[Api]](
+      IO.raiseError(report(s"configure $cfgName section to use $apiName capabilities"))
+    )(IO.pure))
 }
