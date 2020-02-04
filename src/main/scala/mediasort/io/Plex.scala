@@ -11,7 +11,7 @@ import mediasort.config.Config.PlexConfig
 
 import scala.xml.{Elem, XML}
 
-class Plex(cfg: PlexConfig) {
+class Plex(cfg: PlexConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing]) {
   val baseUrl = s"http://${cfg.address.value}:${cfg.port.getOrElse(32400)}"
   val clientName = "mediasort"
   val clientVersion = Mediasort.version
@@ -87,6 +87,8 @@ class Plex(cfg: PlexConfig) {
 }
 
 object Plex {
+  def apply(cfg: PlexConfig, backend: SttpBackend[IO, Nothing, Nothing]) = new Plex(cfg)(backend)
+
   def err(s: String) = new Exception(s)
 
   def asEmpty: ResponseAs[Either[Throwable, Unit], Nothing] =

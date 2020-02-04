@@ -10,8 +10,7 @@ import io.circe.generic.extras.semiauto._
 import mediasort.config.Config.OMDBConfig
 import mediasort.io.OMDB.Query
 
-class OMDB(cfg: OMDBConfig) {
-
+class OMDB(cfg: OMDBConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing]) {
 
   def query(q: Query) = {
     val url = uri"http://www.omdbapi.com/?${q.toParams(cfg.apiKey.value)}"
@@ -31,6 +30,8 @@ class OMDB(cfg: OMDBConfig) {
 }
 
 object OMDB {
+  def apply(cfg: OMDBConfig, backend: SttpBackend[IO, Nothing, Nothing]) = new OMDB(cfg)(backend)
+
   case class Query(
       title: Option[String] = None,
       imdbId: Option[String] = None,

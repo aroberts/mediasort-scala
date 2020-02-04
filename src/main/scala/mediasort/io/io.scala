@@ -6,5 +6,6 @@ import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import Mediasort.cs
 
 package object io {
-  implicit val sttpBackend = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
+//  val sttpBackend = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
+//  val s = AsyncHttpClientCatsBackend[IO]()
 }

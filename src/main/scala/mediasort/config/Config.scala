@@ -7,9 +7,7 @@ import io.circe._
 import io.circe.generic.extras.semiauto._
 import io.circe.yaml.parser
 import cats.syntax.either._
-import cats.syntax.show._
 import cats.effect.{Blocker, ContextShift, IO}
-import cats.effect.Async
 import fs2.Stream
 import fs2.io.file
 import fs2.text
@@ -17,7 +15,6 @@ import io.circe.generic.extras.Configuration
 import mediasort.action.Matcher
 import mediasort.classify.{Classification, Classifier, Input, MediaType}
 import mediasort.config.Config._
-import mediasort.io.{Email, OMDB, Plex}
 import mediasort.errors._
 import mediasort.paths
 

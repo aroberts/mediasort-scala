@@ -10,18 +10,23 @@ import mediasort.errors._
 import fs2.Stream
 import cats.syntax.functor._
 import mediasort.action.Action
+import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift
+//  val sttpClient = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
+
 
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def program(args: CLIArgs): Stream[IO, Unit] = for {
     cfg <- Config.load(args.configPath)
     input <- Stream.eval(Input(args.inputPath))
 
+    sttpClient <- Stream.resource(AsyncHttpClientCatsBackend.resource[IO]())
+
     // memoized apis
-    omdb <- Stream.eval(memoizedAPI(cfg.omdb, new OMDB(_), "omdb", "OMDB"))
-    plex <- Stream.eval(memoizedAPI(cfg.plex, new Plex(_), "plex", "Plex"))
+    omdb <- Stream.eval(memoizedAPI(cfg.omdb, OMDB(_, sttpClient), "omdb", "OMDB"))
+    plex <- Stream.eval(memoizedAPI(cfg.plex, Plex(_, sttpClient), "plex", "Plex"))
     email <- Stream.eval(memoizedAPI(cfg.email, new Email(_), "email", "email notification"))
 
     classifiers = cfg.classifiers.filter(_.applies(input))
