@@ -10,11 +10,11 @@ import mediasort.errors._
 import fs2.Stream
 import cats.syntax.functor._
 import mediasort.action.Action
-import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+
+import mediasort.io.http._
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift
-//  val sttpClient = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
 
 
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
@@ -22,7 +22,10 @@ object Mediasort extends IOApp {
     cfg <- Config.load(args.configPath)
     input <- Stream.eval(Input(args.inputPath))
 
-    sttpClient <- Stream.resource(AsyncHttpClientCatsBackend.resource[IO]())
+    // using the backend "properly" - as a resource - intruduces 3-4s of lag
+    // on program termination. I assume it's from the close() call cleaning
+    // up threads? Worth fixing eventually
+//    sttpClient <- Stream.resource(AsyncHttpClientCatsBackend.resource[IO]())
 
     // memoized apis
     omdb <- Stream.eval(memoizedAPI(cfg.omdb, OMDB(_, sttpClient), "omdb", "OMDB"))
