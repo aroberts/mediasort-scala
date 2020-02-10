@@ -29,7 +29,7 @@ scalacOptions ++= Seq(
   "-Xlint:type-parameter-shadow", // A local type parameter shadows a type already in scope.
   "-Ywarn-dead-code", // Warn when dead code is identified.
   "-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
-  "-Ywarn-numeric-widen", // Warn when numerics are widened.
+  // "-Ywarn-numeric-widen", // Warn when numerics are widened.
   // "-Ywarn-unused:implicits", // Warn if an implicit parameter is unused.
   // "-Ywarn-unused:imports", // Warn if an import selector is not referenced.
   // "-Ywarn-unused:locals", // Warn if a local definition is unused.
@@ -60,14 +60,14 @@ lazy val mediasort = (project in file("."))
 
       "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M1",
 
-      "org.typelevel" %% "cats-effect" % "2.1.0",
+      "org.typelevel" %% "cats-effect" % "2.1.1",
 
       "co.fs2" %% "fs2-core" % "2.2.2",
       "co.fs2" %% "fs2-io" % "2.2.2",
 
-      "com.softwaremill.sttp.client" %% "core" % "2.0.0-RC7",
-      "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC7",
-      "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.0-RC7",
+      "com.softwaremill.sttp.client" %% "core" % "2.0.0-RC9",
+      "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC9",
+      "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.0-RC9",
 
       "org.scalatest" %% "scalatest" % "3.1.0" % Test
     )
