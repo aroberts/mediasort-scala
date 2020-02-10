@@ -40,6 +40,21 @@ package object ops {
         }
       go(Nil, Chunk.empty[O], stream).stream
     }
+
+    def foldFailFast[O2](failWhen: O => Boolean, acc: O2, f: (O2, O) => O2): Stream[F, O2] = {
+      def go(s: Stream[F, O], failWhen: O => Boolean, acc: O2, f: (O2, O) => O2): Pull[F, O2, Unit] = {
+        s.pull.uncons1.flatMap {
+          case None => Pull.output1(acc) >> Pull.done
+          case Some((hd, tl)) =>
+            val updatedAcc = f(acc, hd)
+            if (failWhen(hd)) Pull.output1(updatedAcc) >> Pull.done
+            else go(tl, failWhen, updatedAcc, f)
+        }
+      }
+
+      go(stream, failWhen, acc, f).stream
+    }
+
   }
 
   implicit class NelOps[A](nel: NonEmptyList[A]) {

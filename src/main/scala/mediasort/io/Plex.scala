@@ -2,7 +2,8 @@ package mediasort.io
 
 import cats.effect.IO
 import cats.syntax.either._
-import mediasort.strings._
+import cats.syntax.show._
+import mediasort.errors._
 import sttp.client._
 import Plex._
 import cats.data.EitherT
@@ -80,7 +81,7 @@ class Plex(cfg: PlexConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing])
     } yield refresh
 
     // or fail on errors?
-    res.leftMap(e => scribe.error(s"[PLEX] ${errorMessage(e)}"))
+    res.leftMap(e => scribe.error(s"[PLEX] ${e.show}"))
       .value.map(_ => ()) // discard output
   }
 

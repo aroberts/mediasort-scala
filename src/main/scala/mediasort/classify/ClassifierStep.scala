@@ -13,12 +13,12 @@ import cats.syntax.either._
 import cats.effect.IO
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
-import mediasort.config.Config
 import mediasort.config.Config._
 import mediasort.errors._
 import mediasort.{paths, strings}
 import mediasort.ops._
 import fs2._
+import mediasort.classify.ClassifierStep.{BasicClassifierStep, OMDBClassifierStep}
 import mediasort.io.OMDB
 
 import scala.util.matching.Regex
@@ -29,6 +29,10 @@ import scala.util.matching.Regex
   */
 sealed trait ClassifierStep {
   def logError(err: String) = scribe.error(s"${strings.underscore(strings.typeName(this))}: $err")
+  def classify(mediaType: MediaType, i: Input, omdb: IO[OMDB]): IO[Option[Classification]] = this match {
+    case s: BasicClassifierStep => s.classify(mediaType, i)
+    case s: OMDBClassifierStep => omdb.flatMap(s.classify(_, mediaType, i))
+  }
 }
 
 object ClassifierStep {

@@ -12,8 +12,8 @@ import cats.instances.option._
 import scala.jdk.javaapi.CollectionConverters._
 import fs2.io.file
 import fs2.{Stream, text}
-
 import Mediasort.cs
+import mediasort.classify.Classifier.FilterSet
 
 object paths {
   def walk(p: Path) = Stream.resource(Blocker[IO]).flatMap(b =>
@@ -53,28 +53,24 @@ object paths {
 
   } yield ()).compile.drain
 
-  def extensionFilter(
-      only: Option[NonEmptyList[String]],
-      exclude: Option[NonEmptyList[String]],
+  def filteredExtensions(
+      filters: FilterSet[String],
+      // directories are "ignored" by default - they pass without examination vs filters
       ignoreDirs: Boolean = true
-  )(f: Path): Boolean = {
-    (ignoreDirs && Files.isDirectory(f)) || only.fold[Boolean](
-      !exclude.exists(e => e.exists(f.toString.toLowerCase.endsWith))
-    )(_.exists(f.toString.toLowerCase.endsWith))
-  }
+  ): Path => Boolean =
+    p => (ignoreDirs && Files.isDirectory(p)) || filters.filter[Path](_.toString.endsWith)(p)
 
 
   def copy(
       src: Path,
       dst: Path,
       perms: Option[Set[PFP]],
-      only: Option[NonEmptyList[String]],
-      exclude: Option[NonEmptyList[String]],
+      extensionFilter: FilterSet[String],
       preserveDir: Boolean,
       dryRun: Boolean,
       flags: Seq[CopyOption] = Seq.empty
   ) = fileTreeOp(src, dst, perms, preserveDir, dryRun)("copying",
-    (b, src) => file.walk[IO](b, src).filter(paths.extensionFilter(only, exclude)),
+    (b, src) => file.walk[IO](b, src).filter(filteredExtensions(extensionFilter)),
     (b, cur, tgt) => file.copy[IO](b, cur, tgt, flags)
   )
 
@@ -82,14 +78,14 @@ object paths {
       src: Path,
       dst: Path,
       perms: Option[Set[PFP]],
-      only: Option[NonEmptyList[String]],
-      exclude: Option[NonEmptyList[String]],
+      extensionFilter: FilterSet[String],
       preserveDir: Boolean,
       dryRun: Boolean
   ) = fileTreeOp(src, dst, perms, preserveDir, dryRun)("linking",
     (b, src) => file.walk[IO](b, src)
+       // pre-emptively filter out directories and links - can't be hard linked
       .filter(Files.isRegularFile(_, LinkOption.NOFOLLOW_LINKS))
-      .filter(paths.extensionFilter(only, exclude)),
+      .filter(filteredExtensions(extensionFilter)),
     (b, cur, tgt) => b.delay[IO, Path](Files.createLink(tgt, cur))
   )
 

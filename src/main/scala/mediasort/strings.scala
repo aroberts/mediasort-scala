@@ -1,9 +1,5 @@
 package mediasort
 
-import cats.implicits._
-import _root_.io.circe.{DecodingFailure, ParsingFailure}
-import sttp.client.{DeserializationError, HttpError}
-
 import scala.annotation.tailrec
 
 object strings {
@@ -23,14 +19,5 @@ object strings {
   def normalize(in: String) = spacers.replaceAllIn(in, " ").trim
 
   def typeName[A](a: A) = a.getClass.getSimpleName.stripSuffix("$")
-
-  def errorMessage(t: Throwable): String = t match {
-    case e: ParsingFailure => e.show
-    case e: DecodingFailure => e.show
-    case e: HttpError => e.body
-    case e: DeserializationError[_] => e.original
-    case e: Exception => e.getMessage
-    case _ => t.toString
-  }
 
 }

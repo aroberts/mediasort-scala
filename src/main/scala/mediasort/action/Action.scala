@@ -15,6 +15,8 @@ import mediasort.io.{Email, Plex}
 import mediasort.{fuzz, paths, strings}
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 
+import mediasort.classify.Classifier.FilterSet
+
 sealed trait Action
 object Action {
   sealed trait BasicAction extends Action {
@@ -33,24 +35,22 @@ object Action {
   case class CopyTo(
       destination: Path,
       permissions: Option[Set[PFP]],
-      only: Option[NonEmptyList[String]],
-      exclude: Option[NonEmptyList[String]],
+      extensions: FilterSet[String],
       preserveDir: Option[Boolean],
       link: Option[Boolean]
   ) extends BasicAction {
     def perform(input: Classification, dryRun: Boolean) =
       if (link.getOrElse(false))
-        paths.link(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
+        paths.link(input.path, destination, permissions, extensions, preserveDir.getOrElse(true), dryRun)
       else
-        paths.copy(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
+        paths.copy(input.path, destination, permissions, extensions, preserveDir.getOrElse(true), dryRun)
   }
 
   case class CopyToMatchingSubdir(
       destination: Path,
       permissions: Option[Set[PFP]],
       matchCutoff: Option[Double],
-      only: Option[NonEmptyList[String]],
-      exclude: Option[NonEmptyList[String]],
+      extensions: FilterSet[String],
       preserveDir: Option[Boolean],
       link: Option[Boolean]
   ) extends BasicAction {
@@ -75,39 +75,13 @@ object Action {
 
       target.flatMap(dst =>
         if (link.getOrElse(false))
-          paths.link(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
+          paths.link(input.path, destination, permissions, extensions, preserveDir.getOrElse(true), dryRun)
         else
-          paths.copy(input.path, destination, permissions, only, exclude, preserveDir.getOrElse(true), dryRun)
+          paths.copy(input.path, destination, permissions, extensions, preserveDir.getOrElse(true), dryRun)
       )
     }
   }
-//
-//  case class CopyContentsTo(
-//      destination: Path,
-//      permissions: Option[PermSet],
-//      only: Option[NonEmptyList[String]],
-//      exclude: Option[NonEmptyList[String]],
-//      preserveDir: Option[Boolean]
-//  ) extends Action {
-//    def nelContains[A](a: A)(nel: NonEmptyList[A]) = nel.head == a || nel.tail.contains(a)
-//
-//    def extFilter(f: Path): Boolean = {
-//      val ext = f.ext
-//      only.fold[Boolean](!exclude.exists(nelContains(ext)))(nelContains(ext))
-//    }
-//
-//    override def perform(dryRun: Boolean)(input: Classification)(implicit cfg: Config) = {
-//      val target = if (preserveDir.getOrElse(false)) destination / input.path.last else destination
-//
-//      paths.expandFiles(input.path)
-//        .flatMap(
-//          _.filter(extFilter)
-//            .toList
-//            .traverse(copyInto(target, permissions, dryRun))
-//        ).map(_ => input.copy(path = target))
-//    }
-//  }
-//
+
   case class RefreshPlexSection(sectionName: String, force: Option[Boolean]) extends PlexAction {
     def perform(input: Classification, dryRun: Boolean, plex: Plex) = {
       scribe.info(s"updating plex section '$sectionName'")
