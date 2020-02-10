@@ -2,7 +2,7 @@ package mediasort
 
 import mediasort.classify.{Classification, Classifier, Input}
 import mediasort.config.{CLIArgs, Config}
-import mediasort.io.{Email, Logging, OMDB, Plex}
+import mediasort.clients.{Email, Logging, OMDB, Plex}
 import cats.effect._
 import cats.syntax.show._
 import cats.instances.list._
@@ -11,7 +11,7 @@ import fs2.Stream
 import cats.syntax.functor._
 import mediasort.action.Action
 
-import mediasort.io.http._
+import mediasort.clients.http._
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift

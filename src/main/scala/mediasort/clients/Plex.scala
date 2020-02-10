@@ -1,4 +1,4 @@
-package mediasort.io
+package mediasort.clients
 
 import cats.effect.IO
 import cats.syntax.either._

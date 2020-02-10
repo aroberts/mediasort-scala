@@ -10,7 +10,7 @@ import io.circe.generic.extras.semiauto._
 import mediasort.config.Config._
 import ClassifierStep._
 import cats.data.{NonEmptyList, OptionT}
-import mediasort.io.OMDB
+import mediasort.clients.OMDB
 import mediasort.ops._
 import fs2.Stream
 

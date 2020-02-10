@@ -1,4 +1,4 @@
-package mediasort.io
+package mediasort.clients
 
 import java.nio.file.Path
 

@@ -1,4 +1,4 @@
-package mediasort.io
+package mediasort.clients
 
 import mediasort.config.Config.EmailConfig
 import mediasort.errors._

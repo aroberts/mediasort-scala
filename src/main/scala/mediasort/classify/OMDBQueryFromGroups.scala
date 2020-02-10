@@ -1,6 +1,6 @@
 package mediasort.classify
 
-import mediasort.io.OMDB
+import mediasort.clients.OMDB
 
 import scala.util.matching.Regex.Match
 import cats.syntax.traverse._

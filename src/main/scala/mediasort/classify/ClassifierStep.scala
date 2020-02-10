@@ -19,7 +19,7 @@ import mediasort.{paths, strings}
 import mediasort.ops._
 import fs2._
 import mediasort.classify.ClassifierStep.{BasicClassifierStep, OMDBClassifierStep}
-import mediasort.io.OMDB
+import mediasort.clients.OMDB
 
 import scala.util.matching.Regex
 

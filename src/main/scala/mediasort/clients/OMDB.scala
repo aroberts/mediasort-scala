@@ -1,4 +1,4 @@
-package mediasort.io
+package mediasort.clients
 
 import cats.effect.IO
 import cats.syntax.either._
@@ -8,7 +8,7 @@ import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import mediasort.config.Config.OMDBConfig
-import mediasort.io.OMDB.Query
+import mediasort.clients.OMDB.Query
 
 class OMDB(cfg: OMDBConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing]) {
 

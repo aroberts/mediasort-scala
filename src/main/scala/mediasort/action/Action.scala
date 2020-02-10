@@ -11,7 +11,7 @@ import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.classify.Classification
 import mediasort.config.Config._
-import mediasort.io.{Email, Plex}
+import mediasort.clients.{Email, Plex}
 import mediasort.{fuzz, paths, strings}
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 
