@@ -3,7 +3,6 @@ package mediasort
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 import java.nio.file.{CopyOption, FileVisitOption, Files, LinkOption, Path}
 
-import cats.data.NonEmptyList
 import cats.effect.{Blocker, IO}
 import cats.syntax.either._
 import cats.syntax.traverse._
@@ -13,7 +12,7 @@ import scala.jdk.javaapi.CollectionConverters._
 import fs2.io.file
 import fs2.{Stream, text}
 import Mediasort.cs
-import mediasort.classify.Classifier.FilterSet
+import mediasort.classify.FilterSet
 
 object paths {
   def walk(p: Path) = Stream.resource(Blocker[IO]).flatMap(b =>

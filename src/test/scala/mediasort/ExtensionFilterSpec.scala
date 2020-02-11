@@ -3,7 +3,7 @@ package mediasort
 import cats.data.NonEmptyList
 import java.nio.file.{Path, Paths}
 
-import mediasort.classify.Classifier
+import mediasort.classify.FilterSet
 
 class ExtensionFilterSpec extends Spec {
 
@@ -16,7 +16,7 @@ class ExtensionFilterSpec extends Spec {
   def assertFilter(only: List[String], exclude: List[String], expected: List[Path]) =
     assert(
       input.filter(
-        Classifier.FilterSet(None, NonEmptyList.fromList(only), NonEmptyList.fromList(exclude))
+        FilterSet(None, NonEmptyList.fromList(only), NonEmptyList.fromList(exclude))
           .filter(_.toString.endsWith)
       ) == expected
     )

@@ -15,7 +15,7 @@ import mediasort.clients.{Email, Plex}
 import mediasort.{fuzz, paths, strings}
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 
-import mediasort.classify.Classifier.FilterSet
+import mediasort.classify.FilterSet
 
 sealed trait Action
 object Action {
