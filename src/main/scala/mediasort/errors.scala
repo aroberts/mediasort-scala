@@ -1,10 +1,8 @@
 package mediasort
 
 import cats.Show
-// TODO: remove io package object and fix this
-import _root_.io.circe.{DecodingFailure, ParsingFailure}
+import io.circe.{DecodingFailure, ParsingFailure}
 import cats.syntax.show._
-import sttp.client.{DeserializationError, HttpError}
 
 object errors {
   case class ReportingError(msg: String, cause: Option[Throwable]) extends Exception(msg, cause.orNull) {
