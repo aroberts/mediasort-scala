@@ -72,11 +72,13 @@ object Config {
         // singleton stream of file content string
         .reduce(_.concat(_))
         // parse yaml/json
-        .map(data => parser.parse(data)
-          .flatMap(_.as[A])
-          .leftMap(reportPrefix(s"error parsing $path"))
-        )
+        .map(parse[A](_, path))
         // halt the stream on error
         .rethrow
     }
+
+  def parse[A: Decoder](data: String, path: Path) =
+    parser.parse(data)
+      .flatMap(_.as[A])
+      .leftMap(reportPrefix(s"error parsing $path"))
 }
