@@ -19,7 +19,7 @@ object Mediasort extends IOApp {
 
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def program(args: CLIArgs): Stream[IO, Unit] = for {
-    cfg <- Config.load(args.configPath)
+    cfg <- Config.load[Config](args.configPath)
     input <- Stream.eval(Input(args.inputPath))
 
     // using the backend "properly" - as a resource - intruduces 3-4s of lag
