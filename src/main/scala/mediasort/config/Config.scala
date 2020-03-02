@@ -3,6 +3,7 @@ package mediasort.config
 import java.nio.file.{Path, Paths}
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 
+import cats.data.NonEmptyList
 import io.circe._
 import io.circe.generic.extras.semiauto._
 import io.circe.yaml.parser
@@ -40,7 +41,8 @@ case class Config(
 }
 
 object Config {
-  case class OMDBConfig(apiKey: Env[String])
+  case class MediaTypeMapping(input: Regex, output: MediaType)
+  case class OMDBConfig(apiKey: Env[String], typeMapping: Option[NonEmptyList[MediaTypeMapping]])
   case class PlexConfig(user: Env[String], password: Env[String], address: Env[String], port: Option[Int])
   case class EmailConfig(
       from: Env[String],
@@ -54,6 +56,8 @@ object Config {
   implicit val jsonCfg = Configuration.default
     .withSnakeCaseMemberNames
     .withSnakeCaseConstructorNames
+
+  implicit val decodeMediaTypeMapping: Decoder[MediaTypeMapping] = deriveConfiguredDecoder
 
   implicit val decodeConfig: Decoder[Config] = deriveConfiguredDecoder
   implicit val decodeOMDBConf: Decoder[OMDBConfig] = deriveConfiguredDecoder

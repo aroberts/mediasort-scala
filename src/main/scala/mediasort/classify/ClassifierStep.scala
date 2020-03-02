@@ -29,23 +29,23 @@ import scala.util.matching.Regex
   */
 sealed trait ClassifierStep {
   def logError(err: String) = scribe.error(s"${strings.underscore(strings.typeName(this))}: $err")
-  def classify(mediaType: MediaType, i: Input, omdb: IO[OMDB]): IO[Option[Classification]] = this match {
-    case s: BasicClassifierStep => s.classify(mediaType, i)
-    case s: OMDBClassifierStep => omdb.flatMap(s.classify(_, mediaType, i))
+  def classify(i: Input, omdb: IO[OMDB]): IO[Option[Classification]] = this match {
+    case s: BasicClassifierStep => s.classify(i)
+    case s: OMDBClassifierStep => omdb.flatMap(s.classify(_, i))
   }
 }
 
 object ClassifierStep {
   sealed trait BasicClassifierStep extends ClassifierStep {
-    def classify(mediaType: MediaType, i: Input): IO[Option[Classification]]
+    def classify(i: Input): IO[Option[Classification]]
   }
 
   sealed trait OMDBClassifierStep extends ClassifierStep {
-    def classify(omdb: OMDB, mediaType: MediaType, i: Input): IO[Option[Classification]]
+    def classify(omdb: OMDB, i: Input): IO[Option[Classification]]
   }
 
-  case class MimePatternPercent(pattern: Regex, gain: Option[Double]) extends BasicClassifierStep {
-    override def classify(mediaType: MediaType, i: Input) = {
+  case class MimePatternPercent(mediaType: MediaType, pattern: Regex, gain: Option[Double]) extends BasicClassifierStep {
+    override def classify(i: Input) = {
       val matches = i.mimeTypes.map(pattern.findFirstMatchIn)
       val score = matches.length * 10.0 / i.mimeTypes.length
       val gained = Math.round(gain.map(_ * score).getOrElse(score)).toInt
@@ -54,8 +54,8 @@ object ClassifierStep {
     }
   }
 
-  case class PathPatterns(patterns: List[MatcherWithScore]) extends BasicClassifierStep {
-    def classify(mediaType: MediaType, i: Input) = {
+  case class PathPatterns(mediaType: MediaType, patterns: List[MatcherWithScore]) extends BasicClassifierStep {
+    def classify(i: Input) = {
       val stream = for {
         mws <- Stream.evals(IO.pure(patterns)) // for io context
         matched <- Stream.emit(mws.pattern.findFirstMatchIn(i.path.toString)).unNone
@@ -81,10 +81,10 @@ object ClassifierStep {
       contentPatterns: List[MatcherWithScore],
       queryFromGroups: OMDBQueryFromGroups
   ) extends OMDBClassifierStep {
-    override def classify(omdb: OMDB, mediaType: MediaType, i: Input) = {
+    override def classify(omdb: OMDB, i: Input) = {
       val stream = for {
         path <- Stream.emits(i.files).filter(p => extensions.exists(p.endsWith))
-        c <- omdbMatchClassifications(omdb, logError, i.path, mediaType, contentPatterns, queryFromGroups)(paths.readFile(path))
+        c <- omdbMatchClassifications(omdb, logError, i.path, contentPatterns, queryFromGroups)(paths.readFile(path))
       } yield c
 
       stream.take(1).compile.last
@@ -95,9 +95,9 @@ object ClassifierStep {
       contentPatterns: List[MatcherWithScore],
       queryFromGroups: OMDBQueryFromGroups
   ) extends OMDBClassifierStep {
-    override def classify(omdb: OMDB, mediaType: MediaType, i: Input) = {
+    override def classify(omdb: OMDB, i: Input) = {
       omdbMatchClassifications(
-        omdb, logError, i.path, mediaType, contentPatterns, queryFromGroups
+        omdb, logError, i.path, contentPatterns, queryFromGroups
       )(Stream.emit(i.path.toString)).take(1).compile.last
     }
   }
@@ -106,7 +106,6 @@ object ClassifierStep {
       omdb: OMDB,
       logError: String => Unit,
       path: Path,
-      mediaType: MediaType,
       contentPatterns: List[MatcherWithScore],
       queryFromGroups: OMDBQueryFromGroups
   )(input: Stream[IO, String]) = for {
@@ -114,9 +113,8 @@ object ClassifierStep {
     mws <- Stream.emits(contentPatterns)
     matched <- Stream.emit(mws.pattern.findFirstMatchIn(inputElem)).unNone
     query <- Stream.eval(IO.pure(queryFromGroups.toQuery(matched))).rethrow
-    response <- Stream.eval(omdb.query(query))
-    filtered <- Stream.emit(response.filter(_.containsAnyType(queryFromGroups.responseTypes))).unNone
-  } yield Classification(path, mediaType, mws.score, Some(filtered.title))
+    response <- Stream.eval(omdb.query(query)).unNone
+  } yield Classification(path, omdb.mediaType(response), mws.score, Some(response.title))
 
   implicit val decodeClassifierStep: Decoder[ClassifierStep] = deriveConfiguredDecoder
 }

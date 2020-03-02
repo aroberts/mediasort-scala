@@ -15,8 +15,7 @@ import mediasort.ops._
 case class OMDBQueryFromGroups(
     imdbId: Option[Int],
     title: Option[Int],
-    year: Option[Int],
-    responseTypes: List[String]
+    year: Option[Int]
 ) {
   def toQuery(m: Match) = for {
     imdbVal <- imdbId.traverse(m.safeGroup("error extracting imdb_id:"))

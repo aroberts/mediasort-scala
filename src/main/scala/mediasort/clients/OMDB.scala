@@ -7,10 +7,13 @@ import sttp.client.circe._
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import mediasort.config.Config.OMDBConfig
+import mediasort.classify.MediaType
+import mediasort.config.Config.{MediaTypeMapping, OMDBConfig}
 import mediasort.clients.OMDB.Query
 
 class OMDB(cfg: OMDBConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing]) {
+
+  lazy val typeMapping = cfg.typeMapping.fold(List.empty[MediaTypeMapping])(_.toList)
 
   def query(q: Query) = {
     val url = uri"http://www.omdbapi.com/?${q.toParams(cfg.apiKey.value)}"
@@ -27,6 +30,8 @@ class OMDB(cfg: OMDBConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing])
         )
       ))
   }
+
+  def mediaType(r: OMDB.Response.Success) = r.toMediaType(typeMapping)
 }
 
 object OMDB {
@@ -56,6 +61,8 @@ object OMDB {
       override def toEither = Right(this)
 
       def containsAnyType(types: List[String]) = types.contains(`type`)
+      def toMediaType(mapping: List[MediaTypeMapping]) =
+        mapping.find(_.input.matches(`type`)).fold(MediaType(`type`))(_.output)
     }
 
     private implicit val omdbCfg: Configuration = Configuration.default.copy(
