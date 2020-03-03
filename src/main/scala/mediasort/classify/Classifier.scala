@@ -1,7 +1,6 @@
 package mediasort.classify
 
 import cats.effect.IO
-import cats.syntax.traverse._
 import cats.instances.list._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
@@ -12,7 +11,6 @@ import fs2.Stream
 import scala.util.matching.Regex
 
 case class Classifier(
-    mediaType: MediaType,
     mimeTypes: Option[FilterSet[Regex]],
     filename: Option[FilterSet[Regex]],
     criteria: List[ClassifierStep]
