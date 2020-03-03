@@ -13,10 +13,11 @@ import scala.util.matching.Regex
 import cats.syntax.either._
 import fs2.{Chunk, Pull, Stream}
 
+import errors._
+
 package object ops {
   implicit class RegexMatchOps(m: Regex.Match) {
     private def rawSafeGroup(i: Int) = Either.catchNonFatal(m.group(i))
-    def safeGroup(i: Int) = rawSafeGroup(i).leftMap(errors.report)
     def safeGroup(prefix: String)(i: Int) =
       rawSafeGroup(i).leftMap(errors.reportPrefix(prefix))
   }
