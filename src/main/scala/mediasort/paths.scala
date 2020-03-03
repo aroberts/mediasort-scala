@@ -53,18 +53,19 @@ object paths {
   } yield ()).compile.drain
 
   def filteredExtensions(
-      filters: FilterSet[String],
+      filters: Option[FilterSet[String]],
       // directories are "ignored" by default - they pass without examination vs filters
       ignoreDirs: Boolean = true
   ): Path => Boolean =
-    p => (ignoreDirs && Files.isDirectory(p)) || filters.filter[Path](_.toString.endsWith)(p)
+    p => (ignoreDirs && Files.isDirectory(p)) ||
+      filters.forall(_.filter[Path](_.toString.endsWith)(p))
 
 
   def copy(
       src: Path,
       dst: Path,
       perms: Option[Set[PFP]],
-      extensionFilter: FilterSet[String],
+      extensionFilter: Option[FilterSet[String]],
       preserveDir: Boolean,
       dryRun: Boolean,
       flags: Seq[CopyOption] = Seq.empty
@@ -77,7 +78,7 @@ object paths {
       src: Path,
       dst: Path,
       perms: Option[Set[PFP]],
-      extensionFilter: FilterSet[String],
+      extensionFilter: Option[FilterSet[String]],
       preserveDir: Boolean,
       dryRun: Boolean
   ) = fileTreeOp(src, dst, perms, preserveDir, dryRun)("linking",

@@ -35,7 +35,7 @@ object Action {
   case class CopyTo(
       destination: Path,
       permissions: Option[Set[PFP]],
-      extensions: FilterSet[String],
+      extensions: Option[FilterSet[String]],
       preserveDir: Option[Boolean],
       link: Option[Boolean]
   ) extends BasicAction {
@@ -50,7 +50,7 @@ object Action {
       destination: Path,
       permissions: Option[Set[PFP]],
       matchCutoff: Option[Double],
-      extensions: FilterSet[String],
+      extensions: Option[FilterSet[String]],
       preserveDir: Option[Boolean],
       link: Option[Boolean]
   ) extends BasicAction {
