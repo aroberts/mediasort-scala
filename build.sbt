@@ -65,9 +65,11 @@ lazy val mediasort = (project in file("."))
       "co.fs2" %% "fs2-core" % "2.2.2",
       "co.fs2" %% "fs2-io" % "2.2.2",
 
-      "com.softwaremill.sttp.client" %% "core" % "2.0.0-RC9",
-      "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC9",
-      "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.0-RC9",
+      "org.http4s" %% "http4s-dsl" % "0.21.1",
+      "org.http4s" %% "http4s-circe" % "0.21.1",
+      "org.http4s" %% "http4s-scala-xml" % "0.21.1",
+      "org.http4s" %% "http4s-blaze-server" % "0.21.1",
+      "org.http4s" %% "http4s-blaze-client" % "0.21.1",
 
       "org.scalatest" %% "scalatest" % "3.1.0" % Test
     )

@@ -4,16 +4,22 @@ import cats.effect.IO
 import cats.syntax.either._
 import cats.syntax.show._
 import mediasort.errors._
-import sttp.client._
-import Plex._
-import cats.data.EitherT
 import mediasort.Mediasort
 import mediasort.config.Config.PlexConfig
 
-import scala.xml.{Elem, XML}
+import scala.xml.Elem
+import org.http4s._
+import org.http4s.client._
+import org.http4s.syntax.all._
+import org.http4s.scalaxml._
+import org.http4s.client.dsl.io._
 
-class Plex(cfg: PlexConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing]) {
-  val baseUrl = s"http://${cfg.address.value}:${cfg.port.getOrElse(32400)}"
+class Plex(cfg: PlexConfig, client: Client[IO]) {
+
+  val host = cfg.address.value
+  val hostAndScheme = if (host.contains("://")) host else s"http://$host"
+  val baseUrl = IO.fromEither(Uri.fromString(s"$hostAndScheme:${cfg.port.getOrElse(32400)}"))
+
   val clientName = "mediasort"
   val clientVersion = Mediasort.version
   val clientId = java.security.MessageDigest.getInstance("SHA-1")
@@ -21,85 +27,61 @@ class Plex(cfg: PlexConfig)(implicit backend: SttpBackend[IO, Nothing, Nothing])
     .map("%02x".format(_))
     .mkString
 
-  lazy val token = {
-    val res = basicRequest
-      .post(uri"https://plex.tv/users/sign_in.xml")
-      .body("user[login]" -> cfg.user.value, "user[password]" -> cfg.password.value)
-      .headers(Map(
-        "X-Plex-Client-Identifier" -> clientId,
-        "X-Plex-Product" -> clientName,
-        "X-Plex-Version" -> clientVersion
-      ))
-      .response(asXML)
-      .send()
 
-    EitherT(res.map(_.body))
-      .map(_ \\ "authentication-token")
-      .subflatMap(nodes => Either.fromOption(nodes.headOption, err("No token in response received from Plex")))
-      .map(_.text)
-  }
+  val token = client.expect[Elem](Method.POST(
+    UrlForm("user[login]" -> cfg.user.value, "user[password]" -> cfg.password.value),
+    uri"https://plex.tv/users/sign_in.xml",
+    Header("X-Plex-Client-Identifier", clientId),
+    Header("X-Plex-Product", clientName),
+    Header("X-Plex-Version", clientVersion)
+  )).map(n => Either.fromOption(
+    (n \\ "authentication-token").headOption.map(_.text),
+    err("No token in response received from Plex"))
+  ).flatMap(IO.fromEither)
 
-  def getRequest[A](paths: Any*)(as: ResponseAs[Either[Throwable, A], Nothing])(
-      params: Map[String, Any] = Map(),
+  def getRequest(
+      path: String,
+      params: Uri => Uri = identity,
       headers: Map[String, String] = Map(),
-  ) = {
-    val url = uri"$baseUrl/$paths?$params"
-    scribe.debug(s"[PLEX] GET ${url.toString}")
+  ) = for {
+    base <- baseUrl
+    url = params(base.addPath(path))
+    tk <- token
+    _ = scribe.debug(s"[PLEX] GET ${url.toString}")
+    authedHeaders = (headers + ("X-Plex-Token" -> tk)).toList.map(h => Header(h._1, h._2))
+    res <- client.expect[Elem](Method.GET(url, authedHeaders: _*))
+  } yield res
 
-    token.flatMapF(t => basicRequest
-      .get(uri"$baseUrl/$paths?$params")
-      .response(as)
-      .headers(headers)
-      .header("X-Plex-Token", t)
-      .send()
-      .map(r => {
-        scribe.debug(s"[PLEX] ${r.code}")
-        scribe.trace(s"[PLEX] ${r.body.fold(_.toString, _.toString)}")
-        r.body
-      })
-    )
-  }
 
-  def listSections = getRequest("library","sections")(asXML)()
-  def refreshSectionById(sectionId: Int, force: Boolean = false) = {
-    getRequest(s"library", "sections", sectionId, "refresh")(asEmpty)(
-      params = Map("force" -> (if (force) Some(1) else None))
-    )
-  }
+  def listSections = getRequest("library/sections")
+  def refreshSectionById(sectionId: Int, force: Boolean = false) = getRequest(
+    s"library/sections/$sectionId/refresh",
+    u => if (force) u.withQueryParam("force", 1) else u
+  )
 
-  private def pureEitherT[A, B](a: Option[A], other: => B) = EitherT(IO.pure(Either.fromOption(a, other)))
-  private def pureEitherT[A](a: => A) = EitherT(IO.pure(Either.catchNonFatal(a)))
+  private def IOFromOption[A, B](a: Option[A], other: => Throwable) = IO.fromEither(Either.fromOption(a, other))
+  private def IOFromNonFatal[A](a: => A) = IO.fromEither(Either.catchNonFatal(a))
+  private def err(s: String) = new Exception(s)
 
   def refreshSection(sectionName: String, force: Boolean = false) = {
     val res = for {
       sections <- listSections
       sectionElem = sections \\ "Directory" find(_.attribute("title").exists(_.text == sectionName))
-      section <- pureEitherT(sectionElem, err(s"Section title '$sectionName' not found"))
-      id <- pureEitherT(section.attribute("key").flatMap(_.headOption).map(_.text), err(s"No id for section '$sectionName'"))
-      idInt <- pureEitherT(id.toInt)
+      section <- IOFromOption(sectionElem, err(s"Section title '$sectionName' not found"))
+      id <- IOFromOption(section.attribute("key").flatMap(_.headOption).map(_.text), err(s"No id for section '$sectionName'"))
+      idInt <- IOFromNonFatal(id.toInt)
       refresh <- refreshSectionById(idInt, force)
     } yield refresh
 
+
     // or fail on errors?
-    res.leftMap(e => scribe.error(s"[PLEX] ${e.show}"))
-      .value.map(_ => ()) // discard output
+    res.attempt.map { att =>
+      att.leftMap(e => scribe.error(s"[PLEX] ${e.show}"))
+      () // discard output
+    }
   }
 
 }
 
 object Plex {
-  def apply(cfg: PlexConfig, backend: SttpBackend[IO, Nothing, Nothing]) = new Plex(cfg)(backend)
-
-  def err(s: String) = new Exception(s)
-
-  def asEmpty: ResponseAs[Either[Throwable, Unit], Nothing] =
-    asString.map(ResponseAs.deserializeRightWithError({
-      case "" => Right(())
-      case other => Left(err(s"Expected empty response, but got '$other'"))
-    }))
-
-  def asXML: ResponseAs[Either[Throwable, Elem], Nothing] =
-    asString.map(ResponseAs.deserializeRightWithError(deserializeXML))
-
-    private def deserializeXML(s: String) = Either.catchNonFatal(XML.loadString(s))
 }

@@ -23,8 +23,6 @@ object errors {
     case e: ReportingError => e.report
     case e: ParsingFailure => e.show
     case e: DecodingFailure => e.show
-//    case e: HttpError => e.body
-//    case e: DeserializationError[_] => e.body
     case e: Exception => e.getMessage
     case t => t.toString
   }

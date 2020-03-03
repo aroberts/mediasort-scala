@@ -1,36 +1,32 @@
 package mediasort
 
-import java.nio.file.Path
-
-import mediasort.classify.{Classification, Classifier, Input, MediaType}
+import mediasort.classify.{Classification, Classifier, Input}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.clients.{Email, Logging, OMDB, Plex}
 import cats.effect._
 import cats.syntax.show._
-import cats.instances.list._
 import mediasort.errors._
 import fs2.Stream
 import cats.syntax.functor._
 import mediasort.action.Action
-import mediasort.clients.http._
+import org.http4s.client.blaze._
+
+import scala.concurrent.ExecutionContext
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift
-
 
   def version = Option(getClass.getPackage.getImplementationVersion).getOrElse("dev")
   def program(args: CLIArgs): Stream[IO, Unit] = for {
     cfg <- Config.load[Config](args.configPath)
     input <- Stream.eval(Input(args.inputPath))
 
-    // using the backend "properly" - as a resource - intruduces 3-4s of lag
-    // on program termination. I assume it's from the close() call cleaning
-    // up threads? Worth fixing eventually
-//    sttpClient <- Stream.resource(AsyncHttpClientCatsBackend.resource[IO]())
+    // TODO: more appropriate http thread pool
+    httpClient <- Stream.resource(BlazeClientBuilder[IO](ExecutionContext.global).resource)
 
     // memoized apis
-    omdb <- Stream.eval(memoizedAPI(cfg.omdb, OMDB(_, sttpClient), "omdb", "OMDB"))
-    plex <- Stream.eval(memoizedAPI(cfg.plex, Plex(_, sttpClient), "plex", "Plex"))
+    omdb <- Stream.eval(memoizedAPI(cfg.omdb, new OMDB(_, httpClient), "omdb", "OMDB"))
+    plex <- Stream.eval(memoizedAPI(cfg.plex, new Plex(_, httpClient), "plex", "Plex"))
     email <- Stream.eval(memoizedAPI(cfg.email, new Email(_), "email", "email notification"))
 
     classifiers = cfg.classifiers.filter(_.applies(input))

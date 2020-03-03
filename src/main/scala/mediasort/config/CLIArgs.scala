@@ -15,6 +15,10 @@ object CLIArgs {
   val dryRun = Opts.flag("dry-run", help = "log actions instead of performing them", short = "d").orFalse
   val quiet = Opts.flags("quiet", help = "less logging", short = "q").withDefault(0)
   val verbose = Opts.flags("verbose", help = "more logging", short = "v").withDefault(0)
+//  maybe???
+//  val server = Opts.flag("server", help = "Run as a HTTP server instead of CLI app").withDefault(0)
+//  val port = Opts.option[Int]("port", help = "HTTP server listen port").withDefault(8080)
+//
   val version = Opts.flag("version", help = "print version and exit", visibility = Visibility.Partial)
   val path = Opts.argument[Path]("input path")
 
