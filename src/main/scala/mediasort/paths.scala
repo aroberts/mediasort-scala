@@ -54,10 +54,11 @@ object paths {
 
   def filteredExtensions(
       filters: Option[FilterSet[String]],
-      // directories are "ignored" by default - they pass without examination vs filters
-      ignoreDirs: Boolean = true
+      // directories are not evaluated against the filters param, but they are removed
+      // if removeDirs is true
+      removeDirs: Boolean = true
   ): Path => Boolean =
-    p => (ignoreDirs && Files.isDirectory(p)) ||
+    p => if (Files.isDirectory(p)) !removeDirs else
       filters.forall(_.filter[Path](_.toString.endsWith)(p))
 
 

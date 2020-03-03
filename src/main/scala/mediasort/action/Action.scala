@@ -75,9 +75,9 @@ object Action {
 
       target.flatMap(dst =>
         if (link.getOrElse(false))
-          paths.link(input.path, destination, permissions, extensions, preserveDir.getOrElse(true), dryRun)
+          paths.link(input.path, dst, permissions, extensions, preserveDir.getOrElse(true), dryRun)
         else
-          paths.copy(input.path, destination, permissions, extensions, preserveDir.getOrElse(true), dryRun)
+          paths.copy(input.path, dst, permissions, extensions, preserveDir.getOrElse(true), dryRun)
       )
     }
   }
