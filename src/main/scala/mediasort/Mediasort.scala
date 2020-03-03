@@ -1,6 +1,8 @@
 package mediasort
 
-import mediasort.classify.{Classification, Classifier, Input}
+import java.nio.file.Path
+
+import mediasort.classify.{Classification, Classifier, Input, MediaType}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.clients.{Email, Logging, OMDB, Plex}
 import cats.effect._
@@ -10,7 +12,6 @@ import mediasort.errors._
 import fs2.Stream
 import cats.syntax.functor._
 import mediasort.action.Action
-
 import mediasort.clients.http._
 
 object Mediasort extends IOApp {
@@ -34,10 +35,10 @@ object Mediasort extends IOApp {
 
     classifiers = cfg.classifiers.filter(_.applies(input))
     _ = scribe.debug(s"running ${classifiers.size} classifiers")
-    classifications = Classifier.classifications(input, classifiers, omdb)
-      .map(Classification.mergeByType)
 
-    classification <- Stream.evals(classifications)
+    classifications = Classifier.classifications(input, classifiers, omdb)
+
+    classification <- Classification.merged(classifications).take(1)
     _ = scribe.debug(classification.show)
 
     action <- Stream.emits(cfg.actionsFor(classification))

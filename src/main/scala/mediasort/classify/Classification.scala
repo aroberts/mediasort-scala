@@ -4,9 +4,10 @@ import java.nio.file.Path
 
 import cats.Show
 import cats.syntax.option._
-import cats.syntax.semigroup._
 import mediasort.config.Config
 import mediasort.strings._
+
+import fs2.Stream
 
 case class Classification(
     path: Path,
@@ -28,15 +29,26 @@ case class Classification(
 }
 
 object Classification {
-  def mergeByType(in: List[Classification]): List[Classification] =
-    in.groupBy(c => (c.path, c.mediaType))
-      .values
-      .map(
-        _.sortBy(_.score)(Ordering[Int].reverse)
-          .reduce((l, r) =>
-            Classification(l.path, l.mediaType, score(l.score + r.score), l.name orElse r.name)
-          )
-      ).toList
+  private type MergeState = Map[(Path, MediaType), Classification]
+  private val MergeState = Map.empty[(Path, MediaType), Classification]
+
+
+  /**
+    * Consumes a stream of classifications, combining classifications that share
+    * the same path and media type. Combined classifications are emitted in sorted
+    * order, highest score first
+    */
+  def merged[F[_]](classifications: Stream[F, Classification]) =
+    classifications.fold(MergeState)((state, in) => {
+      val key = (in.path, in.mediaType)
+      val update = state.get(key).map(old =>
+        Classification(key._1, key._2, score(old.score + in.score), bestName(old, in))
+      ).getOrElse(in)
+      state + (key -> update)
+    }).flatMap(m => Stream.emits(m.values.toList.sortBy(_.score)(Ordering[Int].reverse)))
+
+  def bestName(l: Classification, r: Classification) =
+    if (l.score > r.score) l.name orElse r.name else r.name orElse l.name
 
   def none(path: Path)(implicit cfg: Config) = Classification(path, cfg.unclassified, 0)
 

@@ -23,15 +23,10 @@ case class Classifier(
 }
 
 object Classifier {
-  def classifications(i: Input, classifiers: List[Classifier], omdb: IO[OMDB]) =
-    classifiers.flatTraverse(c =>
-      c.criteria.traverse(_.classify(c.mediaType, i, omdb))
-    ).map(_.flatten)
-
-  def classificationStream(i: Input, classifiers: List[Classifier], omdb: IO[OMDB]) = for {
+  def classifications(i: Input, classifiers: List[Classifier], omdb: IO[OMDB]) = for {
     classifier <- Stream.evals(IO.pure(classifiers))
     step <- Stream.emits(classifier.criteria)
-    classification <- Stream.eval(step.classify(classifier.mediaType, i, omdb)).unNone
+    classification <- Stream.eval(step.classify(i, omdb)).unNone
   } yield classification
 
   implicit val decodeClassifier: Decoder[Classifier] = deriveConfiguredDecoder
