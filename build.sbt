@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "2.13.1"
+ThisBuild / scalaVersion := "2.13.5"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 scalacOptions ++= Seq(
@@ -19,7 +19,6 @@ scalacOptions ++= Seq(
   "-Xlint:inaccessible", // Warn about inaccessible types in method signatures.
   "-Xlint:infer-any", // Warn when a type argument is inferred to be `Any`.
   "-Xlint:missing-interpolator", // A string literal appears to be missing an interpolator id.
-  "-Xlint:nullary-override", // Warn when non-nullary `def f()' overrides nullary `def f'.
   "-Xlint:nullary-unit", // Warn when nullary methods return Unit.
   "-Xlint:option-implicit", // Option.apply used implicit view.
   // "-Xlint:package-object-classes", // Class or object defined in package object.
@@ -42,35 +41,44 @@ scalacOptions ++= Seq(
   "-Ycache-macro-class-loader:last-modified", // and macro definitions. This can lead to performance improvements.
   )
 
+lazy val http4sVersion = "0.21.20"
+lazy val fs2Version = "2.5.3"
+lazy val circeVersion = "0.13.0"
+lazy val circeYamlVersion = "0.13.1"
+lazy val catsEffectVersion = "2.3.3"
+
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
     fork in run := true,
     libraryDependencies ++= Seq(
-      "com.monovore" %% "decline" % "1.0.0",
+      "com.monovore" %% "decline" % "1.3.0",
       "com.outr" %% "scribe" % "2.7.10",
 
-      "io.circe" %% "circe-core" % "0.12.3",
-      "io.circe" %% "circe-generic" % "0.12.3",
-      "io.circe" %% "circe-generic-extras" % "0.12.2",
-      "io.circe" %% "circe-parser" % "0.12.3",
-      "io.circe" %% "circe-yaml" % "0.12.0",
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-generic-extras" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "io.circe" %% "circe-yaml" % circeYamlVersion,
 
       "com.sun.mail" % "javax.mail" % "1.6.2",
 
-      "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M1",
+      "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
 
-      "org.typelevel" %% "cats-effect" % "2.1.1",
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
 
-      "co.fs2" %% "fs2-core" % "2.2.2",
-      "co.fs2" %% "fs2-io" % "2.2.2",
+      "co.fs2" %% "fs2-core" % fs2Version,
+      "co.fs2" %% "fs2-io" % fs2Version,
 
-      "org.http4s" %% "http4s-dsl" % "0.21.1",
-      "org.http4s" %% "http4s-circe" % "0.21.1",
-      "org.http4s" %% "http4s-scala-xml" % "0.21.1",
-      "org.http4s" %% "http4s-blaze-server" % "0.21.1",
-      "org.http4s" %% "http4s-blaze-client" % "0.21.1",
+      "org.http4s" %% "http4s-dsl" % http4sVersion,
+      "org.http4s" %% "http4s-circe" % http4sVersion,
+      "org.http4s" %% "http4s-scala-xml" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
 
+      "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.2" % Test,
       "org.scalatest" %% "scalatest" % "3.1.0" % Test
+
+
     )
   )

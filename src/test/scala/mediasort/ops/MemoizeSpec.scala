@@ -1,12 +1,12 @@
 package mediasort.ops
 
-import cats.effect.{Async, IO}
-import mediasort.Spec
+import cats.effect._
+import mediasort.AsyncSpec
 
-class MemoizeSpec extends Spec {
+class MemoizeSpec extends AsyncSpec {
 
   case class MemTest(i: Int) {
-    val range = Async.memoize(IO {
+    val range = cats.effect.Async.memoize(IO {
       println("computing range")
       Range(0,i).toList
     })
@@ -29,7 +29,8 @@ class MemoizeSpec extends Spec {
       squared2 <- io2
     } yield ()
 
-    p.unsafeRunSync
+    // prints once
+    p.asserting(_ => assert(true))
   }
 
 }

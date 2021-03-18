@@ -91,9 +91,9 @@ object Action {
 
   case class EmailNotify(to: String, subject: String, body: String) extends EmailAction {
     def bodyReplacements(input: Classification) = body
-      .replaceAllLiterally("{}", input.show)
-      .replaceAllLiterally("{debug}", input.toString)
-      .replaceAllLiterally("{long}", input.toMultiLineString)
+      .replace("{}", input.show)
+      .replace("{debug}", input.toString)
+      .replace("{long}", input.toMultiLineString)
 
     def perform(input: Classification, dryRun: Boolean, email: Email) = {
       scribe.info(s"sending email to '$to'")
