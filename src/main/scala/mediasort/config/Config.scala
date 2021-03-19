@@ -13,7 +13,7 @@ import fs2.Stream
 import fs2.io.file
 import fs2.text
 import io.circe.generic.extras.Configuration
-import mediasort.action.Matcher
+import mediasort.action.ActionMatcher
 import mediasort.classify.{Classification, Classifier, Input, MediaType}
 import mediasort.config.Config._
 import mediasort.errors._
@@ -29,7 +29,7 @@ case class Config(
     plex: Option[PlexConfig],
     email: Option[EmailConfig],
     classifiers: List[Classifier],
-    actions: List[Matcher]
+    actions: List[ActionMatcher]
 ) {
   val unclassified = unclassifiedMediaType.getOrElse(MediaType("other"))
 

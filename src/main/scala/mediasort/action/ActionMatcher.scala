@@ -5,12 +5,12 @@ import io.circe.generic.extras.semiauto._
 import mediasort.config.Config.jsonCfg
 import mediasort.classify.MediaType
 
-case class Matcher(
+case class ActionMatcher(
     mediaType: MediaType,
     confidence: Option[Int],
     perform: List[Action]
 )
 
-object Matcher {
-  implicit val decodeTrigger: Decoder[Matcher] = deriveConfiguredDecoder
+object ActionMatcher {
+  implicit val decodeTrigger: Decoder[ActionMatcher] = deriveConfiguredDecoder
 }
