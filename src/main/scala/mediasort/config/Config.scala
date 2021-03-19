@@ -65,7 +65,7 @@ object Config {
   implicit val decodeEmailConf: Decoder[EmailConfig] = deriveConfiguredDecoder
 
   implicit val decodeRegex: Decoder[Regex] = Decoder[String].emapTry(s => Try(s.r))
-  implicit val decodePermSet: Decoder[Set[PFP]] = Decoder[Int].emap(paths.posixFilePermissions)
+  implicit val decodePermSet: Decoder[Set[PFP]] = Decoder[Int].emap(paths.base10posixFilePermissions)
   implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(Paths.get(s)))
 
   def load[A: Decoder](path: Path)(implicit cs: ContextShift[IO]): Stream[IO, A] =

@@ -90,7 +90,7 @@ object paths {
     (b, cur, tgt) => b.delay[IO, Path](Files.createLink(tgt, cur))
   )
 
-  def posixFilePermissions(base10perms: Int) = {
+  def base10posixFilePermissions(base10perms: Int) = {
     def perms(base10: Int, r: PFP, w: PFP, x: PFP) =
       if (base10 > 7 || base10 < 0) Left(()) else
         Right(
