@@ -47,6 +47,15 @@ lazy val circeVersion = "0.13.0"
 lazy val circeYamlVersion = "0.13.1"
 lazy val catsEffectVersion = "2.3.3"
 
+
+enablePlugins(JavaAppPackaging)
+packageName := "mediasort"
+packageSummary := "Classify and modify your media"
+executableScriptName := "mediasort"
+maintainer := ""
+
+
+
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
