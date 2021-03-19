@@ -54,8 +54,6 @@ packageSummary := "Classify and modify your media"
 executableScriptName := "mediasort"
 maintainer := ""
 
-
-
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
