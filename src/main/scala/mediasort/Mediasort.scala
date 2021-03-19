@@ -52,10 +52,16 @@ object Mediasort extends IOApp {
             .compile
             .drain
             .as(ExitCode.Success)
-            .handleErrorWith(e => IO(scribe.error(e.show)).as(ExitCode.Error))
+            .handleErrorWith(e => errorHandler(e, 3).as(ExitCode.Error))
       }
     }
   }
+
+  def errorHandler(e: Throwable, depth: Int): IO[Unit] =
+    IO(scribe.error(e.show)).flatMap(_ => e match {
+      case ex: Exception if depth > 0 && Option(ex.getCause).isDefined => errorHandler(ex.getCause, depth - 1)
+      case _ => IO.pure(())
+    })
 
   /**
     * Memoize here is used to perform the parsing/allocation once (creating the Api instance), but
