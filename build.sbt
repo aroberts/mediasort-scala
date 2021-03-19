@@ -53,6 +53,8 @@ packageName := "mediasort"
 packageSummary := "Classify and modify your media"
 executableScriptName := "mediasort"
 maintainer := ""
+// disable sbt-native-packager wrapper script options
+javaOptions in Universal += "--"
 
 lazy val mediasort = (project in file("."))
   .settings(
