@@ -2,10 +2,7 @@ package mediasort.action
 
 import java.nio.file.{Files, Path}
 
-import cats.data.NonEmptyList
 import cats.effect.IO
-import cats.instances.list._
-import cats.syntax.traverse._
 import cats.syntax.show._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._

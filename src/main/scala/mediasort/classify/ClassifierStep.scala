@@ -2,19 +2,14 @@ package mediasort.classify
 
 import java.nio.file.Path
 
-import cats.data.{EitherT, OptionT}
 import cats.instances.option._
-import cats.instances.lazyList._
 import cats.instances.list._
 import cats.instances.either._
 import cats.syntax.traverse._
-import cats.syntax.show._
-import cats.syntax.either._
 import cats.effect.IO
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.config.Config._
-import mediasort.errors._
 import mediasort.{paths, strings}
 import mediasort.ops._
 import fs2._
