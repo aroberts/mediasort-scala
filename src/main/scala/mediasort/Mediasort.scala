@@ -7,7 +7,6 @@ import cats.effect._
 import cats.syntax.show._
 import mediasort.errors._
 import fs2.Stream
-import cats.syntax.functor._
 import mediasort.action.Action
 import org.http4s.client.blaze._
 
@@ -58,6 +57,11 @@ object Mediasort extends IOApp {
     }
   }
 
+  /**
+    * Memoize here is used to perform the parsing/allocation once (creating the Api instance), but
+    * then defer the evaluation of the option/error situation until it's used. That way, if an
+    * invocation won't involve a feature, there's no error in leaving that feature unconfigured.
+    */
   def memoizedAPI[Cfg, Api](cfg: Option[Cfg], f: Cfg => Api, cfgName: String, apiName: String): IO[IO[Api]] =
     Async.memoize(cfg.map(f).fold[IO[Api]](
       IO.raiseError(report(s"configure $cfgName section to use $apiName capabilities"))
