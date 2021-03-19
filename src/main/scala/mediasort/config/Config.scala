@@ -43,7 +43,7 @@ case class Config(
 object Config {
   case class MediaTypeMapping(input: Regex, output: MediaType)
   case class OMDBConfig(apiKey: Env[String], typeMapping: Option[NonEmptyList[MediaTypeMapping]])
-  case class PlexConfig(user: Env[String], password: Env[String], address: Env[String], port: Option[Int])
+  case class PlexConfig(user: Env[String], password: Env[String], serverAddress: Env[String], port: Option[Int])
   case class EmailConfig(
       from: Env[String],
       host: Env[String],

@@ -16,7 +16,7 @@ import org.http4s.client.dsl.io._
 
 class Plex(cfg: PlexConfig, client: Client[IO]) {
 
-  val host = cfg.address.value
+  val host = cfg.serverAddress.value
   val hostAndScheme = if (host.contains("://")) host else s"http://$host"
   val baseUrl = IO.fromEither(Uri.fromString(s"$hostAndScheme:${cfg.port.getOrElse(32400)}"))
 
