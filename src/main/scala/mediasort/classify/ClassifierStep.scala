@@ -49,6 +49,11 @@ object ClassifierStep {
     }
   }
 
+  case class AnyFile(mediaType: MediaType, score: Int) extends BasicClassifierStep {
+    def classify(i: Input) =
+      IO.pure(Option(Classification(i.path, mediaType, score, None)))
+  }
+
   case class PathPatterns(mediaType: MediaType, patterns: List[MatcherWithScore]) extends BasicClassifierStep {
     def classify(i: Input) = {
       val stream = for {
