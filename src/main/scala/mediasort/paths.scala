@@ -2,7 +2,6 @@ package mediasort
 
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 import java.nio.file.{CopyOption, FileVisitOption, Files, LinkOption, Path}
-
 import cats.effect.{Blocker, IO}
 import cats.syntax.either._
 import cats.syntax.traverse._
@@ -45,11 +44,13 @@ object paths {
     _ = scribe.info(s"$gerund '$src' to '$dst'")
     targetDir = if (preserveDir && Files.isDirectory(src)) dst.resolve(src.getFileName) else dst
     currentFile <- generate(b, src)
-    targetFile = targetDir.resolve(src.relativize(currentFile))
+    // handle difference between explicit file (src == current) and generated file from list
+    relativeTarget = if (src == currentFile) currentFile.getFileName else src.relativize(currentFile)
+    targetFile = targetDir.resolve(relativeTarget)
     _ = scribe.debug(s" - $gerund '$currentFile' to '$targetFile'")
+    _ <- Stream.eval(mkdirsIfNecessary(b, targetFile.getParent))
     _ <- Stream.eval(if (dryRun) IO.pure(()) else operate(b, currentFile, targetFile))
     _ <- perms.filter(_ => !dryRun).traverse(p => Stream.eval(setPermissions(b, targetFile, p)))
-
   } yield ()).compile.drain
 
   def filteredExtensions(
@@ -61,6 +62,13 @@ object paths {
     p => if (Files.isDirectory(p)) !removeDirs else
       filters.forall(_.filter[Path](_.toString.endsWith)(p))
 
+  def mkdirsIfNecessary(b: Blocker, targetDir: Path): IO[Unit] = for {
+    exists <- file.exists[IO](b, targetDir)
+    _ <- if (!exists) {
+      scribe.debug(s"- creating directory '$targetDir'")
+      file.createDirectories[IO](b, targetDir)
+    } else IO.pure(())
+  } yield ()
 
   def copy(
       src: Path,
