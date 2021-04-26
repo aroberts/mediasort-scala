@@ -58,7 +58,7 @@ object Mediasort extends IOApp {
   }
 
   def errorHandler(e: Throwable, depth: Int): IO[Unit] =
-    IO(scribe.error(e.show)).flatMap(_ => e match {
+    IO(scribe.error("[Global] " + e.show)).flatMap(_ => e match {
       case ex: Exception if depth > 0 && Option(ex.getCause).isDefined => errorHandler(ex.getCause, depth - 1)
       case _ => IO.pure(())
     })

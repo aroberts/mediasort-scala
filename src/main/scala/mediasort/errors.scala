@@ -15,7 +15,7 @@ object errors {
     case e: ReportingError => e.msg
     case e: ParsingFailure => e.show
     case e: DecodingFailure => e.show
-    case e: Exception => e.getMessage
+//    case e: Exception => e.getMessage
     case t => t.toString
   }
 }
