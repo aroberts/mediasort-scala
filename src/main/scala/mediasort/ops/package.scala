@@ -1,13 +1,6 @@
 package mediasort
 
 import cats.data.NonEmptyList
-import cats.syntax.flatMap._
-import cats.syntax.applicative._
-import cats.syntax.functor._
-import cats.syntax.applicativeError._
-import cats.syntax.monadError._
-import cats.effect.{Async, Sync}
-import cats.effect.concurrent.{Ref, Semaphore}
 
 import scala.util.matching.Regex
 import cats.syntax.either._
