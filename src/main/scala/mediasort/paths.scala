@@ -26,7 +26,10 @@ object paths {
 
   def readFile(p: Path) = Stream.resource(Blocker[IO]).flatMap(b =>
     file.readAll[IO](p, b, 4096)
-    .through(text.utf8Decode)
+      // utf8 chunks
+      .through(text.utf8Decode[IO])
+      // singleton stream of file content string
+      .reduce(_.concat(_))
   )
 
   def fileTreeOp(

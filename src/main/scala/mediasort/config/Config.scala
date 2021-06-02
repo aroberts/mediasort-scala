@@ -68,18 +68,11 @@ object Config {
   implicit val decodePermSet: Decoder[Set[PFP]] = Decoder[Int].emap(paths.base10posixFilePermissions)
   implicit val decodePath: Decoder[Path] = Decoder[String].emapTry(s => Try(Paths.get(s)))
 
-  def load[A: Decoder](path: Path)(implicit cs: ContextShift[IO]): Stream[IO, A] =
-    Stream.resource(Blocker[IO]).flatMap { blocker =>
-      file.readAll[IO](path, blocker, 4096)
-        // utf8 chunks
-        .through(text.utf8Decode[IO])
-        // singleton stream of file content string
-        .reduce(_.concat(_))
-        // parse yaml/json
-        .map(parse[A](_, path))
-        // halt the stream on error
-        .rethrow
-    }
+  def load[A: Decoder](path: Path): Stream[IO, A] =
+    paths.readFile(path)
+      .map(parse[A](_, path))
+      // halt the stream on error
+      .rethrow
 
   def parse[A: Decoder](data: String, path: Path) =
     parser.parse(data)
