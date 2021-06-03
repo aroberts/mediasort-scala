@@ -1,17 +1,17 @@
 package mediasort
 
 import java.nio.file.attribute.{PosixFilePermission => PFP}
-import java.nio.file.{CopyOption, FileVisitOption, Files, LinkOption, Path}
-import cats.effect.{Blocker, IO}
+import java.nio.file.{CopyOption, FileVisitOption, Files, LinkOption, Path, Paths}
+import cats.effect.{Blocker, Concurrent, IO}
 import cats.syntax.either._
 import cats.syntax.traverse._
 import cats.instances.option._
 
 import scala.jdk.javaapi.CollectionConverters._
-import fs2.io.file
+import fs2.io.{Watcher, file}
 import fs2.{Stream, text}
 import Mediasort.cs
-import mediasort.classify.FilterSet
+import mediasort.classify.{FilterSet, Input}
 
 object paths {
   def walk(p: Path) = Stream.resource(Blocker[IO]).flatMap(b =>
@@ -121,5 +121,26 @@ object paths {
   def setPermissions(b: Blocker, p: Path, perms: Set[PFP]) =
     b.delay[IO, Path](Files.setPosixFilePermissions(p, asJava(perms)))
 
+
+  /**
+    * Implements the watchdir semantic.
+    *
+    * Files placed in the watchdir are read, and each line is treated as a path, from which we
+    * attempt to construct an input.
+    */
+  def watch(path: Path, types: Watcher.EventType*)(implicit c: Concurrent[IO]) = for {
+    b <- Stream.resource(Blocker[IO])
+    events <- file.watch(b, path, types)
+  } yield events
+  /**
+    * Read the contents of a file and emit a stream of Path objects (one per line of the input)
+    *
+    * TODO: this will ignore some "files" (symlinks eg?) without notifying the user of the issue
+    */
+  def extractInputs(path: Path) =
+    expandFiles(path)
+      .flatMap(readFile)
+      .flatMap(contents => Stream.emits(contents.split("\\\\n")))
+      .evalMap(line => Input(Paths.get(line)))
 
 }

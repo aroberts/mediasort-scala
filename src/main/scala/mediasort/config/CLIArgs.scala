@@ -29,8 +29,7 @@ object CLIArgs {
       |watch directory for inputs - any file placed in this directory will
       |be interpreted as a newline-separated list of paths to be processed.
       |If a watch directory is provided, then mediasort runs as a daemon,
-      |sleeping until a path is provided via the watch directory. Changes
-      |to the config file are also dynamically reloaded in this mode.
+      |sleeping until a path is provided via the watch directory.
       |""".stripMargin).orNone
 
   val version = Opts.flag("version", help = "print version and exit", visibility = Visibility.Partial)

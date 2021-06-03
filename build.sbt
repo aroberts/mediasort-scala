@@ -85,7 +85,7 @@ lazy val mediasort = (project in file("."))
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % http4sVersion,
 
-      "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.2" % Test,
+      "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4" % Test,
       "org.scalatest" %% "scalatest" % "3.1.0" % Test
 
 
