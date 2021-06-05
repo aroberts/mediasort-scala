@@ -60,9 +60,14 @@ lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
     fork in run := true,
+
+    // don't generate javadoc.jar when running sbt native packager "stage" tasks
+    mappings in (Compile, packageDoc) := Seq(),
+
     libraryDependencies ++= Seq(
       "com.monovore" %% "decline" % "1.3.0",
       "com.outr" %% "scribe" % "2.7.10",
+      // TODO switch to logging 4 cats
 
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
