@@ -73,6 +73,7 @@ object paths {
     } else IO.pure(())
   } yield ()
 
+  // TODO: in your test.yml, "copying" log msg isn't actually copying anything
   def copy(
       src: Path,
       dst: Path,

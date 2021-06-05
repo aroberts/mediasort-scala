@@ -1,5 +1,6 @@
 package mediasort
 
+import cats.data.OptionT
 import mediasort.classify.{Classification, Classifier, Input}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.clients.{Clients, Logging}
@@ -24,11 +25,12 @@ object Mediasort extends IOApp {
 
     // log if we're running in "watch mode"
     _ <- Stream.eval(
-      args.input.swap.toOption
-        .map(d => IO(scribe.info(s"Watching $d for files with input paths...")))
-        .getOrElse(IO.pure(()))
+      OptionT(IO.pure(args.input.swap.toOption)).semiflatTap(d =>
+        IO(scribe.info(s"Watching $d for files with input paths..."))
+      ).value
     )
 
+    // handle the possible input modes
     _ <- args.input match {
       case Left(watchDir) =>
         (for {
@@ -40,7 +42,7 @@ object Mediasort extends IOApp {
           //  counterpoint: you're already cleaning up other watchdirs with time-based criteria,
           //  may as well just clean this one too
           event <- paths.watch(watchDir, Created, Modified)
-          inputPath <- extractPaths(event)
+          inputPath <- extractPaths(Event.pathOf(event))
           _ <- processPath(inputPath, args.dryRun, cfg, clients)
           _ <- Stream.eval(IO(scribe.debug("would delete file here")))
 
@@ -52,21 +54,16 @@ object Mediasort extends IOApp {
     }
   } yield ()
 
-  def processWatchEvent(event: Event, dryRun: Boolean, cfg: Config, clients: Clients) =
-    extractPaths(event).flatMap(processPath(_, dryRun, cfg, clients))
-
-  def extractPaths(e: Event) = e match {
-    case Event.Created(path, count) =>
-      Stream.eval(IO(scribe.debug(s"checking $path for inputs..."))) >>
+  def extractPaths(probablyPath: Option[Path]): Stream[IO, Path] =
+    probablyPath.map(path =>
+      Stream.eval(IO(scribe.debug(s"[WATCH]: Found $path"))) >>
         paths.readFile(path)
           .flatMap(contents => Stream.emits(contents.split("\\\\n")))
           .map(_.trim)
           .filter(_.nonEmpty)
           .evalTap(s => IO(scribe.debug(s" - constructing Input from $s")))
           .map(s => Paths.get(s))
-
-    case x => Stream.eval(IO(scribe.trace(s" ignoring $x"))) >> Stream.empty
-  }
+    ).getOrElse(Stream.empty)
 
   def processPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
     input <- Stream.eval(Input(input))
