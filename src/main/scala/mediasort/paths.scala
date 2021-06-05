@@ -132,15 +132,4 @@ object paths {
     b <- Stream.resource(Blocker[IO])
     events <- file.watch(b, path, types)
   } yield events
-  /**
-    * Read the contents of a file and emit a stream of Path objects (one per line of the input)
-    *
-    * TODO: this will ignore some "files" (symlinks eg?) without notifying the user of the issue
-    */
-  def extractInputs(path: Path) =
-    expandFiles(path)
-      .flatMap(readFile)
-      .flatMap(contents => Stream.emits(contents.split("\\\\n")))
-      .evalMap(line => Input(Paths.get(line)))
-
 }
