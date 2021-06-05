@@ -23,7 +23,7 @@ import scala.util.matching.Regex
   * most one classification per input.
   */
 sealed trait ClassifierStep {
-  def logError(err: String) = scribe.error(s"${strings.underscore(strings.typeName(this))}: $err")
+  def logError(err: String) = IO(scribe.error(s"${strings.underscore(strings.typeName(this))}: $err"))
   def classify(i: Input, omdb: IO[OMDB]): IO[Option[Classification]] = this match {
     case s: BasicClassifierStep => s.classify(i)
     case s: OMDBClassifierStep => omdb.flatMap(s.classify(_, i))
@@ -104,7 +104,7 @@ object ClassifierStep {
 
   private def omdbMatchClassifications(
       omdb: OMDB,
-      logError: String => Unit,
+      logError: String => IO[Unit],
       path: Path,
       contentPatterns: List[MatcherWithScore],
       queryFromGroups: OMDBQueryFromGroups

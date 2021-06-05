@@ -19,11 +19,10 @@ class OMDB(cfg: OMDBConfig, client: Client[IO]) {
 
   def query(q: Query) = {
     val uri = uri"http://www.omdbapi.com/".withQueryParams(q.toParams(cfg.apiKey.value))
-    client.expect[OMDB.Response](uri).map {
-      case s: OMDB.Response.Success => Some(s)
+    client.expect[OMDB.Response](uri).flatMap {
+      case s: OMDB.Response.Success => IO.pure(Some(s))
       case OMDB.Response.Failure(error) =>
-        scribe.error(s"[OMDB] $error $uri")
-        None
+        IO(scribe.error(s"[OMDB] $error $uri")).as(None)
     }
   }
 

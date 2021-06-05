@@ -81,8 +81,8 @@ object Action {
 
   case class RefreshPlexSection(sectionName: String, force: Option[Boolean]) extends PlexAction {
     def perform(input: Classification, dryRun: Boolean, plex: Plex) = {
-      scribe.info(s"updating plex section '$sectionName'")
-      if (dryRun) IO.pure(()) else plex.refreshSection(sectionName, force.getOrElse(false))
+      IO(scribe.info(s"updating plex section '$sectionName'")) *>
+        (if (dryRun) IO.pure(()) else plex.refreshSection(sectionName, force.getOrElse(false)))
     }
   }
 
@@ -93,9 +93,9 @@ object Action {
       .replace("{long}", input.toMultiLineString)
 
     def perform(input: Classification, dryRun: Boolean, email: Email) = {
-      scribe.info(s"sending email to '$to'")
-      if (dryRun) IO.pure(())
-      else email.send(to, subject, bodyReplacements(input))
+      IO(scribe.info(s"sending email to '$to'")) *>
+        (if (dryRun) IO.pure(())
+        else email.send(to, subject, bodyReplacements(input)))
     }
   }
 

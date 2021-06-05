@@ -47,7 +47,7 @@ class Plex(cfg: PlexConfig, client: Client[IO]) {
     base <- baseUrl
     url = params(base.addPath(path))
     tk <- token
-    _ = scribe.debug(s"[PLEX] GET ${url.toString}")
+    _ <- IO(scribe.debug(s"[PLEX] GET ${url.toString}"))
     authedHeaders = (headers + ("X-Plex-Token" -> tk)).toList.map(h => Header(h._1, h._2))
     res <- client.expect[Elem](Method.GET(url, authedHeaders: _*))
   } yield res
@@ -75,10 +75,8 @@ class Plex(cfg: PlexConfig, client: Client[IO]) {
 
 
     // or fail on errors?
-    res.attempt.map { att =>
-      att.leftMap(e => scribe.error(s"[PLEX] ${e.show}"))
-      () // discard output
-    }
+    res.as(())
+      .handleErrorWith(e => IO(scribe.error(s"[PLEX] ${e.show}")))
   }
 
 }

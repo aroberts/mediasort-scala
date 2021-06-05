@@ -5,7 +5,6 @@ import mediasort.config.{CLIArgs, Config}
 import mediasort.clients.{Clients, Logging}
 import cats.effect._
 import cats.syntax.show._
-import cats.syntax.either._
 import mediasort.errors._
 import fs2.Stream
 import fs2.io.Watcher.Event
@@ -23,7 +22,12 @@ object Mediasort extends IOApp {
     cfg <- Config.load[Config](args.configPath)
     clients <- Clients.fromConfig(cfg)
 
-    _ = args.input.swap.toOption.map(d => scribe.info(s"Watching $d for files with input paths..."))
+    // log if we're running in "watch mode"
+    _ <- Stream.eval(
+      args.input.swap.toOption
+        .map(d => IO(scribe.info(s"Watching $d for files with input paths...")))
+        .getOrElse(IO.pure(()))
+    )
 
     _ <- args.input match {
       case Left(watchDir) =>
@@ -32,12 +36,13 @@ object Mediasort extends IOApp {
           //  add --deleteWatch flag to remove watch files after processing them
           //  - or do it by default- --no-delete-watch
           //  delete watchfiles unless an error occurs during processing or --no-delete-watch
-          
+
           //  counterpoint: you're already cleaning up other watchdirs with time-based criteria,
           //  may as well just clean this one too
-          event <- paths.watch(watchDir, Created)
-          inputPath <- watchForPaths(event)
+          event <- paths.watch(watchDir, Created, Modified)
+          inputPath <- extractPaths(event)
           _ <- processPath(inputPath, args.dryRun, cfg, clients)
+          _ <- Stream.eval(IO(scribe.debug("would delete file here")))
 
           // treat watch-generated inputs as their own "mini run" of the program, trapping any
           // errors generated. Otherwise, an error during processing a watch input would bubble up
@@ -47,9 +52,12 @@ object Mediasort extends IOApp {
     }
   } yield ()
 
-  def watchForPaths(e: Event) = e match {
+  def processWatchEvent(event: Event, dryRun: Boolean, cfg: Config, clients: Clients) =
+    extractPaths(event).flatMap(processPath(_, dryRun, cfg, clients))
+
+  def extractPaths(e: Event) = e match {
     case Event.Created(path, count) =>
-      Stream.emit(IO(scribe.debug(s"checking $path for inputs..."))) >>
+      Stream.eval(IO(scribe.debug(s"checking $path for inputs..."))) >>
         paths.readFile(path)
           .flatMap(contents => Stream.emits(contents.split("\\\\n")))
           .map(_.trim)
@@ -57,15 +65,15 @@ object Mediasort extends IOApp {
           .evalTap(s => IO(scribe.debug(s" - constructing Input from $s")))
           .map(s => Paths.get(s))
 
-    case x => Stream.emit(IO(scribe.trace(s" ignoring $x"))) >> Stream.empty
+    case x => Stream.eval(IO(scribe.trace(s" ignoring $x"))) >> Stream.empty
   }
 
   def processPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
     input <- Stream.eval(Input(input))
-    _ = scribe.info(s"$input")
+    _ <- Stream.eval(IO(scribe.trace(s"$input")))
 
     classifiers = cfg.classifiers.filter(_.applies(input))
-    _ = scribe.debug(s"running ${classifiers.size} classifiers")
+    _ <- Stream.eval(IO(scribe.debug(s"running ${classifiers.size} classifiers")))
 
     classifications = Classifier.classifications(input, classifiers, clients.omdb)
 

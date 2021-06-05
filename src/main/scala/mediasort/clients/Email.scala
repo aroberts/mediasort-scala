@@ -2,7 +2,6 @@ package mediasort.clients
 
 import mediasort.config.Config.EmailConfig
 import mediasort.errors._
-import cats.syntax.either._
 import cats.syntax.show._
 import java.util.Properties
 
@@ -21,17 +20,12 @@ class Email(cfg: EmailConfig) {
 
   })
 
-  def send(to: String, subject: String, body: String) = IO {
-    Either.catchNonFatal {
+  def send(to: String, subject: String, body: String): IO[Unit] = IO {
       val message = new MimeMessage(session)
       message.setFrom(new InternetAddress(cfg.from.value))
       message.addRecipient(RecipientType.TO, new InternetAddress(to))
       message.setSubject(subject)
       message.setText(body)
       Transport.send(message, cfg.user.value, cfg.password.value)
-    }.leftMap(e => scribe.error(s"[EMAIL] ${e.show}"))
-
-    () // discard output
-  }
-
+    }.handleErrorWith(e => IO(scribe.error(s"[EMAIL] ${e.show}")))
 }

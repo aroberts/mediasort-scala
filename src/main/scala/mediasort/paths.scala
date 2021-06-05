@@ -44,13 +44,13 @@ object paths {
       operate: (Blocker, Path, Path) => IO[Path]
   ) = (for {
     b <- Stream.resource(Blocker[IO])
-    _ = scribe.info(s"$gerund '$src' to '$dst'")
+    _ <- Stream.eval(IO(scribe.debug(s"$gerund '$src' to '$dst'")))
     targetDir = if (preserveDir && Files.isDirectory(src)) dst.resolve(src.getFileName) else dst
     currentFile <- generate(b, src)
     // handle difference between explicit file (src == current) and generated file from list
     relativeTarget = if (src == currentFile) currentFile.getFileName else src.relativize(currentFile)
     targetFile = targetDir.resolve(relativeTarget)
-    _ = scribe.debug(s" - $gerund '$currentFile' to '$targetFile'")
+    _ <- Stream.eval(IO(scribe.trace(s" - $gerund '$currentFile' to '$targetFile'")))
     _ <- Stream.eval(mkdirsIfNecessary(b, targetFile.getParent))
     _ <- Stream.eval(if (dryRun) IO.pure(()) else operate(b, currentFile, targetFile))
     _ <- perms.filter(_ => !dryRun).traverse(p => Stream.eval(setPermissions(b, targetFile, p)))
@@ -68,8 +68,8 @@ object paths {
   def mkdirsIfNecessary(b: Blocker, targetDir: Path): IO[Unit] = for {
     exists <- file.exists[IO](b, targetDir)
     _ <- if (!exists) {
-      scribe.debug(s"- creating directory '$targetDir'")
-      file.createDirectories[IO](b, targetDir)
+      IO(scribe.trace(s"- creating directory '$targetDir'")) *>
+        file.createDirectories[IO](b, targetDir)
     } else IO.pure(())
   } yield ()
 
