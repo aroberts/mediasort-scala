@@ -32,6 +32,9 @@ object Mediasort extends IOApp {
           //  add --deleteWatch flag to remove watch files after processing them
           //  - or do it by default- --no-delete-watch
           //  delete watchfiles unless an error occurs during processing or --no-delete-watch
+          
+          //  counterpoint: you're already cleaning up other watchdirs with time-based criteria,
+          //  may as well just clean this one too
           event <- paths.watch(watchDir, Created)
           inputPath <- watchForPaths(event)
           _ <- processPath(inputPath, args.dryRun, cfg, clients)
