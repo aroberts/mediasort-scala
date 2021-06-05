@@ -67,7 +67,7 @@ lazy val mediasort = (project in file("."))
     libraryDependencies ++= Seq(
       "com.monovore" %% "decline" % "1.3.0",
       "com.outr" %% "scribe" % "2.7.10",
-      // TODO switch to logging 4 cats
+      "com.outr" %% "scribe-slf4j" % "2.7.10",
 
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
