@@ -49,6 +49,7 @@ object paths {
     currentFile <- generate(b, src)
     // handle difference between explicit file (src == current) and generated file from list
     relativeTarget = if (src == currentFile) currentFile.getFileName else src.relativize(currentFile)
+    _ <- Stream.eval(IO(scribe.trace(s" - $relativeTarget")))
     targetFile = targetDir.resolve(relativeTarget)
     _ <- Stream.eval(IO(scribe.trace(s" - $gerund '$currentFile' to '$targetFile'")))
     _ <- Stream.eval(mkdirsIfNecessary(b, targetFile.getParent))
@@ -73,7 +74,6 @@ object paths {
     } else IO.pure(())
   } yield ()
 
-  // TODO: in your test.yml, "copying" log msg isn't actually copying anything
   def copy(
       src: Path,
       dst: Path,
