@@ -44,7 +44,8 @@ object Mediasort extends IOApp {
 
           // TODO: Errors in watch mode are shutting down the program
           event <- paths.watch(watchDir, Created, Modified)
-          _ <- processWatchPath(Event.pathOf(event), args.dryRun, cfg, clients)
+          _ <- Event.pathOf(event).map(processWatchPath(_, args.dryRun, cfg, clients))
+            .getOrElse(Stream.empty)
             .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
 
           // treat watch-generated inputs as their own "mini run" of the program, trapping any
@@ -55,18 +56,16 @@ object Mediasort extends IOApp {
     }
   } yield ()
 
-  def extractPaths(probablyPath: Option[Path]): Stream[IO, Path] =
-    probablyPath.map(path =>
-      Stream.eval(IO(scribe.debug(s"[WATCH]: Found $path"))) >>
-        paths.readFile(path)
-          .flatMap(contents => Stream.emits(contents.split("\\\\n")))
-          .map(_.trim)
-          .filter(_.nonEmpty)
-          .evalTap(s => IO(scribe.debug(s" - constructing Input from $s")))
-          .map(s => Paths.get(s))
-    ).getOrElse(Stream.empty)
+  def extractPaths(path: Path): Stream[IO, Path] =
+    Stream.eval(IO(scribe.debug(s"[WATCH]: scanning $path"))) >>
+      paths.readFile(path)
+        .flatMap(contents => Stream.emits(contents.split("\n")))
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .evalTap(s => IO(scribe.debug(s"[WATCH]: found $s")))
+        .map(s => Paths.get(s))
 
-  def processWatchPath(path: Option[Path], dryRun: Boolean, cfg: Config, clients: Clients) = for {
+  def processWatchPath(path: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
     inputPath <- extractPaths(path)
     _ <- processInputPath(inputPath, dryRun, cfg, clients)
     // TODO: does this get evaluated once per file or once per path? must be per path...
