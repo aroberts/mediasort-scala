@@ -95,7 +95,6 @@ object Mediasort extends IOApp {
     }
   }
 
-  // TODO: this should be tailrec-able
   def errorHandler(e: Throwable, depth: Int): IO[Unit] =
     IO(scribe.error("[Global] " + e.show)) *>
       IO(scribe.trace("[Global]", e)) *>
