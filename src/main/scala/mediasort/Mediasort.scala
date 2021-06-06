@@ -34,23 +34,10 @@ object Mediasort extends IOApp {
     _ <- args.input match {
       case Left(watchDir) =>
         for {
-          // TODO: can we detect the completion of the processing of an "event" and delete the file?
-          //  add --deleteWatch flag to remove watch files after processing them
-          //  - or do it by default- --no-delete-watch
-          //  delete watchfiles unless an error occurs during processing or --no-delete-watch
-
-          //  counterpoint: you're already cleaning up other watchdirs with time-based criteria,
-          //  may as well just clean this one too
-
-          // TODO: Errors in watch mode are shutting down the program
           event <- paths.watch(watchDir, Created, Modified)
           _ <- Event.pathOf(event).map(processWatchPath(_, args.dryRun, cfg, clients))
             .getOrElse(Stream.empty)
             .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
-
-          // treat watch-generated inputs as their own "mini run" of the program, trapping any
-          // errors generated. Otherwise, an error during processing a watch input would bubble up
-          // to the main event loop and halt the watch stream.
         } yield ()
       case Right(inputPath) => processInputPath(inputPath, args.dryRun, cfg, clients)
     }
@@ -65,11 +52,14 @@ object Mediasort extends IOApp {
         .evalTap(s => IO(scribe.debug(s"[WATCH]: found $s")))
         .map(s => Paths.get(s))
 
+  /**
+    * This is extracted to treat watch-generated inputs as their own "mini run" of the program,
+    * trapping any errors generated. Otherwise, an error during processing a watch input would
+    * bubble up to the main event loop and halt the watch stream.
+    */
   def processWatchPath(path: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
     inputPath <- extractPaths(path)
     _ <- processInputPath(inputPath, dryRun, cfg, clients)
-    // TODO: does this get evaluated once per file or once per path? must be per path...
-    _ <- Stream.eval(IO(scribe.debug("would delete file here")))
   } yield ()
 
   def processInputPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
