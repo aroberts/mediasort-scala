@@ -33,7 +33,7 @@ object Mediasort extends IOApp {
     // handle the possible input modes
     _ <- args.input match {
       case Left(watchDir) =>
-        (for {
+        for {
           // TODO: can we detect the completion of the processing of an "event" and delete the file?
           //  add --deleteWatch flag to remove watch files after processing them
           //  - or do it by default- --no-delete-watch
@@ -41,16 +41,17 @@ object Mediasort extends IOApp {
 
           //  counterpoint: you're already cleaning up other watchdirs with time-based criteria,
           //  may as well just clean this one too
+
+          // TODO: Errors in watch mode are shutting down the program
           event <- paths.watch(watchDir, Created, Modified)
-          inputPath <- extractPaths(Event.pathOf(event))
-          _ <- processPath(inputPath, args.dryRun, cfg, clients)
-          _ <- Stream.eval(IO(scribe.debug("would delete file here")))
+          _ <- processWatchPath(Event.pathOf(event), args.dryRun, cfg, clients)
+            .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
 
           // treat watch-generated inputs as their own "mini run" of the program, trapping any
           // errors generated. Otherwise, an error during processing a watch input would bubble up
           // to the main event loop and halt the watch stream.
-        } yield ()).handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
-      case Right(inputPath) => processPath(inputPath, args.dryRun, cfg, clients)
+        } yield ()
+      case Right(inputPath) => processInputPath(inputPath, args.dryRun, cfg, clients)
     }
   } yield ()
 
@@ -65,7 +66,14 @@ object Mediasort extends IOApp {
           .map(s => Paths.get(s))
     ).getOrElse(Stream.empty)
 
-  def processPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
+  def processWatchPath(path: Option[Path], dryRun: Boolean, cfg: Config, clients: Clients) = for {
+    inputPath <- extractPaths(path)
+    _ <- processInputPath(inputPath, dryRun, cfg, clients)
+    // TODO: does this get evaluated once per file or once per path? must be per path...
+    _ <- Stream.eval(IO(scribe.debug("would delete file here")))
+  } yield ()
+
+  def processInputPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
     input <- Stream.eval(Input(input))
     _ <- Stream.eval(IO(scribe.trace(s"$input")))
 
