@@ -49,6 +49,7 @@ lazy val catsEffectVersion = "2.3.3"
 
 
 enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin)
 packageName := "mediasort"
 packageSummary := "Classify and modify your media"
 executableScriptName := "mediasort"
@@ -59,6 +60,7 @@ javaOptions in Universal += "--"
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
+    version := "0.1.0",
     fork in run := true,
 
     // don't generate javadoc.jar when running sbt native packager "stage" tasks
