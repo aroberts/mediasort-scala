@@ -50,6 +50,9 @@ lazy val catsEffectVersion = "2.3.3"
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
+enablePlugins(AshScriptPlugin)
+
+
 packageName := "mediasort"
 packageSummary := "Classify and modify your media"
 executableScriptName := "mediasort"
@@ -94,7 +97,9 @@ lazy val mediasort = (project in file("."))
 
       "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4" % Test,
       "org.scalatest" %% "scalatest" % "3.1.0" % Test
-
-
     )
+  )
+  // publishing-related settings
+  .settings(
+    dockerBaseImage := "openjdk:jre-alpine"
   )
