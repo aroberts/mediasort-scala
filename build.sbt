@@ -54,7 +54,7 @@ enablePlugins(AshScriptPlugin)
 
 
 packageName := "mediasort"
-packageSummary := "Classify and modify your media"
+packageSummary := "Classify and organize your files"
 executableScriptName := "mediasort"
 maintainer := ""
 // disable sbt-native-packager wrapper script options
