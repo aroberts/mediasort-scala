@@ -50,7 +50,8 @@ lazy val catsEffectVersion = "2.3.3"
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
-enablePlugins(AshScriptPlugin)
+// breaks -- arg-swallow fix
+// enablePlugins(AshScriptPlugin)
 
 
 packageName := "mediasort"
@@ -66,9 +67,8 @@ lazy val mediasort = (project in file("."))
 
     // don't generate javadoc.jar when running sbt native packager "stage" tasks
     Compile / packageDoc / mappings := Seq(),
-
     // disable sbt-native-packager wrapper script options
-    Universal / javaOptions += "--",
+    Universal / javaOptions += "--\n",
 
     libraryDependencies ++= Seq(
       "com.monovore" %% "decline" % "1.3.0",
@@ -102,7 +102,8 @@ lazy val mediasort = (project in file("."))
   )
   // publishing-related settings
   .settings(
-    dockerBaseImage := "openjdk:jre-alpine",
+    // breaks -- arg-swallow fix
+    // dockerBaseImage := "openjdk:jre-alpine",
     // TODO: no point to this unless you also hook up publishing via sbt
     dockerUpdateLatest := true,
     Docker / packageName := "aroberts/mediasort"
