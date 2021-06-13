@@ -57,17 +57,18 @@ packageName := "mediasort"
 packageSummary := "Classify and organize your files"
 executableScriptName := "mediasort"
 maintainer := ""
-// disable sbt-native-packager wrapper script options
-javaOptions in Universal += "--"
 
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
     version := "0.1.0",
-    fork in run := true,
+    run / fork := true,
 
     // don't generate javadoc.jar when running sbt native packager "stage" tasks
-    mappings in (Compile, packageDoc) := Seq(),
+    Compile / packageDoc / mappings := Seq(),
+
+    // disable sbt-native-packager wrapper script options
+    Universal / javaOptions += "--",
 
     libraryDependencies ++= Seq(
       "com.monovore" %% "decline" % "1.3.0",
@@ -101,5 +102,6 @@ lazy val mediasort = (project in file("."))
   )
   // publishing-related settings
   .settings(
-    dockerBaseImage := "openjdk:jre-alpine"
+    dockerBaseImage := "openjdk:jre-alpine",
+    Docker / packageName := "aroberts/mediasort"
   )
