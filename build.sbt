@@ -104,7 +104,6 @@ lazy val mediasort = (project in file("."))
   .settings(
     // breaks -- arg-swallow fix
     // dockerBaseImage := "openjdk:jre-alpine",
-    // TODO: no point to this unless you also hook up publishing via sbt
     dockerUpdateLatest := true,
     Docker / packageName := "aroberts/mediasort"
   )
