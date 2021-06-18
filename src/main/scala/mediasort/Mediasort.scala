@@ -63,7 +63,7 @@ object Mediasort extends IOApp {
   } yield ()
 
   def processInputPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
-    input <- Stream.eval(Input(input))
+    input <- Stream.eval(Input(input, cfg.inputRewrite.getOrElse(List.empty)))
     _ <- Stream.eval(IO(scribe.trace(s"$input")))
 
     classifiers = cfg.classifiers.filter(_.applies(input))

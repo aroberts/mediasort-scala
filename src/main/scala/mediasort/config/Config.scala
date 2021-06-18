@@ -4,15 +4,15 @@ import java.nio.file.{Path, Paths}
 import java.nio.file.attribute.{PosixFilePermission => PFP}
 
 import cats.data.NonEmptyList
+import cats.syntax.either._
+import cats.effect.IO
+import fs2.Stream
+
 import io.circe._
 import io.circe.generic.extras.semiauto._
-import io.circe.yaml.parser
-import cats.syntax.either._
-import cats.effect.{Blocker, ContextShift, IO}
-import fs2.Stream
-import fs2.io.file
-import fs2.text
 import io.circe.generic.extras.Configuration
+import io.circe.yaml.parser
+
 import mediasort.action.ActionMatcher
 import mediasort.classify.{Classification, Classifier, Input, MediaType}
 import mediasort.config.Config._
@@ -28,6 +28,7 @@ case class Config(
     omdb: Option[OMDBConfig],
     plex: Option[PlexConfig],
     email: Option[EmailConfig],
+    inputRewrite: Option[List[Input.Rewriter]],
     classifiers: List[Classifier],
     actions: List[ActionMatcher]
 ) {

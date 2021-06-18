@@ -62,7 +62,7 @@ maintainer := ""
 lazy val mediasort = (project in file("."))
   .settings(
     name := "mediasort",
-    version := "0.1.1",
+    version := "0.2.0",
     run / fork := true,
 
     // don't generate javadoc.jar when running sbt native packager "stage" tasks
