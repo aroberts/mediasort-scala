@@ -23,7 +23,7 @@ import scala.util.matching.Regex
   * most one classification per input.
   */
 sealed trait ClassifierStep {
-  def logError(err: String) = IO(scribe.error(s"${strings.underscore(strings.typeName(this))}: $err"))
+  def errorLabel = strings.underscore(strings.typeName(this))
   def classify(i: Input, omdb: IO[OMDB]): IO[Option[Classification]] = this match {
     case s: BasicClassifierStep => s.classify(i)
     case s: OMDBClassifierStep => omdb.flatMap(s.classify(_, i))
@@ -84,7 +84,7 @@ object ClassifierStep {
     override def classify(omdb: OMDB, i: Input) = {
       val stream = for {
         path <- Stream.emits(i.files).filter(p => extensions.exists(p.endsWith))
-        c <- omdbMatchClassifications(omdb, logError, i.path, contentPatterns, queryFromGroups)(paths.readFile(path))
+        c <- omdbMatchClassifications(omdb, errorLabel, i.path, contentPatterns, queryFromGroups)(paths.readFile(path))
       } yield c
 
       stream.take(1).compile.last
@@ -97,14 +97,14 @@ object ClassifierStep {
   ) extends OMDBClassifierStep {
     override def classify(omdb: OMDB, i: Input) = {
       omdbMatchClassifications(
-        omdb, logError, i.path, contentPatterns, queryFromGroups
+        omdb, errorLabel, i.path, contentPatterns, queryFromGroups
       )(Stream.emit(i.path.toString)).take(1).compile.last
     }
   }
 
   private def omdbMatchClassifications(
       omdb: OMDB,
-      logError: String => IO[Unit],
+      errorLabel: String,
       path: Path,
       contentPatterns: List[MatcherWithScore],
       queryFromGroups: OMDBQueryFromGroups
@@ -112,7 +112,7 @@ object ClassifierStep {
     inputElem <- input
     mws <- Stream.emits(contentPatterns)
     matched <- Stream.emit(mws.pattern.findFirstMatchIn(inputElem)).unNone
-    query <- Stream.eval(IO.pure(queryFromGroups.toQuery(matched))).rethrow
+    query <- Stream.eval(IO.pure(queryFromGroups.toQuery(errorLabel, matched))).rethrow
     response <- Stream.eval(omdb.query(query)).unNone
   } yield Classification(path, omdb.mediaType(response), mws.score, Some(response.title))
 

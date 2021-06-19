@@ -17,10 +17,10 @@ case class OMDBQueryFromGroups(
     title: Option[Int],
     year: Option[Int]
 ) {
-  def toQuery(m: Match) = for {
-    imdbVal <- imdbId.traverse(m.safeGroup("error extracting imdb_id:"))
-    titleVal <- title.traverse(m.safeGroup("error extracting title:"))
-    yearVal <- year.traverse(m.safeGroup("error extracting year:"))
+  def toQuery(errorLabel: String, m: Match) = for {
+    imdbVal <- imdbId.traverse(m.safeGroup(s"$errorLabel: error extracting imdb_id:"))
+    titleVal <- title.traverse(m.safeGroup(s"$errorLabel: error extracting title:"))
+    yearVal <- year.traverse(m.safeGroup(s"$errorLabel: error extracting year:"))
   } yield OMDB.Query(imdbVal, titleVal, yearVal)
 }
 
