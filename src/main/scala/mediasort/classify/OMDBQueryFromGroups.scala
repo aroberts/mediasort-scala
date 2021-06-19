@@ -9,7 +9,7 @@ import cats.instances.either._
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import mediasort.config.Config.jsonCfg
-
+import mediasort.errors._
 import mediasort.ops._
 
 case class OMDBQueryFromGroups(
@@ -17,11 +17,14 @@ case class OMDBQueryFromGroups(
     title: Option[Int],
     year: Option[Int]
 ) {
-  def toQuery(errorLabel: String, m: Match) = for {
-    imdbVal <- imdbId.traverse(m.safeGroup(s"$errorLabel: error extracting imdb_id:"))
-    titleVal <- title.traverse(m.safeGroup(s"$errorLabel: error extracting title:"))
-    yearVal <- year.traverse(m.safeGroup(s"$errorLabel: error extracting year:"))
-  } yield OMDB.Query(imdbVal, titleVal, yearVal)
+  def toQuery(errorLabel: String, m: Match) =
+    if (! List(imdbId.isDefined, title.isDefined, year.isDefined).contains(true))
+      Left(reportPrefix[Throwable](errorLabel)(new Exception("constructing empty OMDB query")))
+    else for {
+      imdbVal <- imdbId.traverse(m.safeGroup(s"$errorLabel: error extracting imdb_id:"))
+      titleVal <- title.traverse(m.safeGroup(s"$errorLabel: error extracting title:"))
+      yearVal <- year.traverse(m.safeGroup(s"$errorLabel: error extracting year:"))
+    } yield OMDB.Query(imdbVal, titleVal, yearVal)
 }
 
 object OMDBQueryFromGroups {
