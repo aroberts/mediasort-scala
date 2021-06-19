@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.docker.DockerChmodType
+
 ThisBuild / scalaVersion := "2.13.5"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -105,5 +107,9 @@ lazy val mediasort = (project in file("."))
     // breaks -- arg-swallow fix
     // dockerBaseImage := "openjdk:jre-alpine",
     dockerUpdateLatest := true,
+    dockerChmodType := DockerChmodType.Custom("a=rX"),
+    dockerAdditionalPermissions := dockerAdditionalPermissions.value.map { case (_, p) =>
+      (DockerChmodType.Custom("a+x"), p)
+    },
     Docker / packageName := "aroberts/mediasort"
   )
