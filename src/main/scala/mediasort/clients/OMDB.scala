@@ -54,8 +54,8 @@ object OMDB {
     private implicit val omdbCfg: Configuration = Configuration.default.copy(
       transformMemberNames = s => s"${s.head.toUpper}${s.tail}",
       transformConstructorNames = {
-        case "True" => "Success"
-        case "False" => "Failure"
+        case "Success" => "True"
+        case "Failure" => "False"
         case s => s
       },
       discriminator = Some("Response")
