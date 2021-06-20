@@ -39,8 +39,6 @@ case class FilterSet[A](
       val onlyRes = only.forall(_.exists(predicate(elem)))
       val excludeRes = !exclude.exists(_.exists(predicate(elem)))
 
-      // this is broken - this says "some element matched some entry in `any`
-      // you need "for EACH in `any`, some element matched it
       if (onlyRes && excludeRes) Some(anyList.map(predicate(elem)))
       else None
     }
