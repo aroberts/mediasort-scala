@@ -52,7 +52,7 @@ object paths {
     _ <- Stream.eval(IO(scribe.trace(s" - $relativeTarget")))
     targetFile = targetDir.resolve(relativeTarget)
     _ <- Stream.eval(IO(scribe.trace(s" - $gerund '$currentFile' to '$targetFile'")))
-    _ <- Stream.eval(mkdirsIfNecessary(b, targetFile.getParent))
+    _ <- Stream.eval(if (dryRun) IO.pure(()) else mkdirsIfNecessary(b, targetFile.getParent))
     _ <- Stream.eval(if (dryRun) IO.pure(()) else operate(b, currentFile, targetFile))
     _ <- perms.filter(_ => !dryRun).traverse(p => Stream.eval(setPermissions(b, targetFile, p)))
   } yield ()).compile.drain
