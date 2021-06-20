@@ -22,7 +22,7 @@ class OMDB(cfg: OMDBConfig, client: Client[IO]) {
     client.expect[OMDB.Response](uri).flatMap {
       case s: OMDB.Response.Success => IO.pure(Some(s))
       case OMDB.Response.Failure(error) =>
-        IO(scribe.error(s"[OMDB] $error $uri")).as(None)
+        IO(scribe.debug(s"[OMDB] $error $uri")).as(None)
     }
   }
 
