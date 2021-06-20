@@ -48,13 +48,16 @@ object paths {
     targetDir = if (preserveDir && Files.isDirectory(src)) dst.resolve(src.getFileName) else dst
     currentFile <- generate(b, src)
     // handle difference between explicit file (src == current) and generated file from list
-    relativeTarget = if (src == currentFile) currentFile.getFileName else src.relativize(currentFile)
-    _ <- Stream.eval(IO(scribe.trace(s" - $relativeTarget")))
+    explicitFile = src == currentFile
+    relativeTarget = if (explicitFile) currentFile.getFileName else src.relativize(currentFile)
     targetFile = targetDir.resolve(relativeTarget)
     _ <- Stream.eval(IO(scribe.trace(s" - $gerund '$currentFile' to '$targetFile'")))
     _ <- Stream.eval(if (dryRun) IO.pure(()) else mkdirsIfNecessary(b, targetFile.getParent))
     _ <- Stream.eval(if (dryRun) IO.pure(()) else operate(b, currentFile, targetFile))
     _ <- perms.filter(_ => !dryRun).traverse(p => Stream.eval(setPermissions(b, targetFile, p)))
+    // set permissions on parent if we're not in explicit file mode (or in dryRun mode)
+    _ <- perms.filter(_ => !(dryRun || explicitFile))
+      .traverse(p => Stream.eval(setPermissions(b, targetFile.getParent, p)))
   } yield ()).compile.drain
 
   def filteredExtensions(
