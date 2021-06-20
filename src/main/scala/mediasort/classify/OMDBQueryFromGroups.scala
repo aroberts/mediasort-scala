@@ -24,7 +24,7 @@ case class OMDBQueryFromGroups(
       imdbVal <- imdbId.traverse(m.safeGroup(s"$errorLabel: error extracting imdb_id:"))
       titleVal <- title.traverse(m.safeGroup(s"$errorLabel: error extracting title:"))
       yearVal <- year.traverse(m.safeGroup(s"$errorLabel: error extracting year:"))
-    } yield OMDB.Query(imdbVal, titleVal, yearVal)
+    } yield OMDB.Query(title = titleVal, imdbId = imdbVal, year = yearVal)
 }
 
 object OMDBQueryFromGroups {
