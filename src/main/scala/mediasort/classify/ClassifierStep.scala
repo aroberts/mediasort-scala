@@ -41,7 +41,7 @@ object ClassifierStep {
 
   case class MimePatternPercent(mediaType: MediaType, pattern: Regex, gain: Option[Double]) extends BasicClassifierStep {
     override def classify(i: Input) = {
-      val matches = i.mimeTypes.map(pattern.findFirstMatchIn)
+      val matches = i.mimeTypes.flatMap(pattern.findFirstMatchIn)
       val score = matches.length * 10.0 / i.mimeTypes.length
       val gained = Math.round(gain.map(_ * score).getOrElse(score)).toInt
 
