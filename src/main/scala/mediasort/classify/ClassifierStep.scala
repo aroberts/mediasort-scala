@@ -98,7 +98,7 @@ object ClassifierStep {
     override def classify(omdb: OMDB, i: Input) = {
       omdbMatchClassifications(
         omdb, errorLabel, i.path, contentPatterns, queryFromGroups
-      )(Stream.emit(i.path.toString)).take(1).compile.last
+      )(Stream.emit(i.filename)).take(1).compile.last
     }
   }
 
