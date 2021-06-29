@@ -13,6 +13,7 @@ import fs2.io.Watcher.EventType._
 import mediasort.action.Action
 
 import java.nio.file.{Path, Paths}
+import scala.concurrent.duration._
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift
@@ -34,7 +35,7 @@ object Mediasort extends IOApp {
     _ <- args.input match {
       case Left(watchDir) =>
         for {
-          event <- paths.watch(watchDir, Created, Modified)
+          event <- paths.watch(watchDir, Created, Modified).debounce(500.millis)
           _ <- Event.pathOf(event).map(processWatchPath(_, args.dryRun, cfg, clients))
             .getOrElse(Stream.empty)
             .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
