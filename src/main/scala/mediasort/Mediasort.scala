@@ -35,9 +35,10 @@ object Mediasort extends IOApp {
     _ <- args.input match {
       case Left(watchDir) =>
         for {
-          event <- paths.watch(watchDir, Created, Modified).debounce(500.millis)
+          event <- paths.watch(watchDir, Created, Modified)
           _ <- Event.pathOf(event).map(processWatchPath(_, args.dryRun, cfg, clients))
             .getOrElse(Stream.empty)
+            .debounce(500.millis)
             .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
         } yield ()
       case Right(inputPath) => processInputPath(inputPath, args.dryRun, cfg, clients)
