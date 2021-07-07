@@ -50,7 +50,7 @@ object Classification {
   def bestName(l: Classification, r: Classification) =
     if (l.score > r.score) l.name orElse r.name else r.name orElse l.name
 
-  def none(path: Path)(implicit cfg: Config) = Classification(path, cfg.unclassified, 0)
+  def none(path: Path, cfg: Config) = Classification(path, cfg.unclassified, 0)
 
   def score(i: Int) = scala.math.max(0, scala.math.min(i, 10))
 

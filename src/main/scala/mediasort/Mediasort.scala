@@ -71,9 +71,10 @@ object Mediasort extends IOApp {
     classifiers = cfg.classifiers.filter(_.applies(input))
     _ <- Stream.eval(IO(scribe.debug(s"running ${classifiers.size} classifiers")))
 
-    classifications = Classifier.classifications(input, classifiers, clients.omdb)
+    classifications = Classification.merged(Classifier.classifications(input, classifiers, clients.omdb)) ++
+      Stream.emit(Classification.none(input.path, cfg))
 
-    classification <- Classification.merged(classifications).take(1)
+    classification <- classifications.take(1)
     _ = scribe.debug(classification.show)
 
     action <- Stream.emits(cfg.actionsFor(classification))
