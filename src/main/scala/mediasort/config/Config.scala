@@ -37,8 +37,6 @@ case class Config(
   def actionsFor(c: Classification) = actions.filter(m =>
     m.mediaType == c.mediaType && m.confidence.forall(_ <= c.score)
   ).flatMap(_.perform)
-
-  def classifiersFor(i: Input) = classifiers
 }
 
 object Config {
