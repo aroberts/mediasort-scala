@@ -36,10 +36,11 @@ object Mediasort extends IOApp {
       case Left(watchDir) =>
         for {
           event <- paths.watch(watchDir, Created, Modified)
-          _ <- Stream.eval(IO(scribe.debug(event.toString)))
-          _ <- Event.pathOf(event).map(processWatchPath(_, args.dryRun, cfg, clients))
-            .getOrElse(Stream.empty)
-//            .debounce(500.millis)
+          _ <- Stream.eval(IO(scribe.trace(event.toString)))
+          // filter out duplicate events
+          path <- Stream.emit(Event.pathOf(event)).unNone.changesBy(_.toString)
+          // process the path, handling errors within the watch loop to avoid terminating
+          _ <- processWatchPath(path, args.dryRun, cfg, clients)
             .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
         } yield ()
       case Right(inputPath) => processInputPath(inputPath, args.dryRun, cfg, clients)
