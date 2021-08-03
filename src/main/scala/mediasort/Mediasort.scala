@@ -23,6 +23,7 @@ object Mediasort extends IOApp {
   def program(args: CLIArgs): Stream[IO, Unit] = for {
     cfg <- Config.load[Config](args.configPath)
     clients <- Clients.fromConfig(cfg)
+    _ <- Stream.eval(IO(scribe.info(s"Mediasort v${version}")))
 
     // log if we're running in "watch mode"
     _ <- Stream.eval(
