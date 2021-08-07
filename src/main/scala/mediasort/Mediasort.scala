@@ -37,7 +37,8 @@ object Mediasort extends IOApp {
       case Left(watchDir) =>
         for {
           event <- paths.watch(watchDir, Created, Modified)
-          _ <- Stream.eval(IO(scribe.trace(event.toString)))
+          _ <- Stream.eval(IO(scribe.trace(s"EVENT: ${event.toString}")))
+          _ <- Stream.eval(IO(scribe.trace(s"PATH: ${Event.pathOf(event).toString}")))
           // filter out duplicate events
           path <- Stream.emit(Event.pathOf(event)).unNone.changesBy(_.toString)
           // process the path, handling errors within the watch loop to avoid terminating
