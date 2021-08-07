@@ -7,7 +7,6 @@ import mediasort.errors._
 import mediasort.Mediasort
 import mediasort.config.Config.PlexConfig
 
-import scala.xml.Elem
 import org.http4s._
 import org.http4s.client._
 import org.http4s.syntax.all._
@@ -15,6 +14,8 @@ import org.http4s.scalaxml._
 import org.http4s.client.dsl.io._
 
 class Plex(cfg: PlexConfig, client: Client[IO]) {
+  // response type alias because wtf is "Elem"
+  private type XML = scala.xml.Elem
 
   val host = cfg.serverAddress.value
   val hostAndScheme = if (host.contains("://")) host else s"http://$host"
@@ -28,7 +29,7 @@ class Plex(cfg: PlexConfig, client: Client[IO]) {
     .mkString
 
 
-  val token = client.expect[Elem](Method.POST(
+  val token = client.expect[XML](Method.POST(
     UrlForm("user[login]" -> cfg.user.value, "user[password]" -> cfg.password.value),
     uri"https://plex.tv/users/sign_in.xml",
     Header("X-Plex-Client-Identifier", clientId),
@@ -39,22 +40,21 @@ class Plex(cfg: PlexConfig, client: Client[IO]) {
     err("No token in response received from Plex"))
   ).flatMap(IO.fromEither)
 
-  def getRequest(
+  def getRequest[ResponseType](
       path: String,
       params: Uri => Uri = identity,
       headers: Map[String, String] = Map(),
-  ) = for {
+  )(implicit d: EntityDecoder[IO, ResponseType]) = for {
     base <- baseUrl
     url = params(base.addPath(path))
     tk <- token
     _ <- IO(scribe.debug(s"[PLEX] GET ${url.toString}"))
     authedHeaders = (headers + ("X-Plex-Token" -> tk)).toList.map(h => Header(h._1, h._2))
-    res <- client.expect[Elem](Method.GET(url, authedHeaders: _*))
+    res <- client.expect[ResponseType](Method.GET(url, authedHeaders: _*))
   } yield res
 
-
-  def listSections = getRequest("library/sections")
-  def refreshSectionById(sectionId: Int, force: Boolean = false) = getRequest(
+  def listSections = getRequest[XML]("library/sections")
+  def refreshSectionById(sectionId: Int, force: Boolean = false) = getRequest[Unit](
     s"library/sections/$sectionId/refresh",
     u => if (force) u.withQueryParam("force", 1) else u
   )
