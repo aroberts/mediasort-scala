@@ -25,48 +25,40 @@ object Mediasort extends IOApp {
     clients <- Clients.fromConfig(cfg)
     _ <- Stream.eval(IO(scribe.info(s"Mediasort v${version}")))
 
-    // log if we're running in "watch mode"
-    _ <- Stream.eval(
-      OptionT(IO.pure(args.input.swap.toOption)).semiflatTap(d =>
-        IO(scribe.info(s"Watching $d for files with input paths..."))
-      ).value
-    )
-
     // handle the possible input modes
     _ <- args.input match {
-      case Left(watchDir) =>
-        for {
-          event <- paths.watch(watchDir, Created, Modified)
-          _ <- Stream.eval(IO(scribe.trace(s"EVENT: ${event.toString}")))
-          _ <- Stream.eval(IO(scribe.trace(s"PATH: ${Event.pathOf(event).toString}")))
-          // filter out duplicate events
-          path <- Stream.emit(Event.pathOf(event)).unNone.changesBy(_.toString)
-          // process the path, handling errors within the watch loop to avoid terminating
-          _ <- processWatchPath(path, args.dryRun, cfg, clients)
-            .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
-        } yield ()
+      case Left(watchDir) => processWatchDir(watchDir, args.dryRun, cfg, clients)
       case Right(inputPath) => processInputPath(inputPath, args.dryRun, cfg, clients)
     }
   } yield ()
 
+  def processWatchDir(watchDir: Path, dryRun: Boolean, cfg: Config, clients: Clients) =
+    // log if we're running in "watch mode"
+    Stream.eval(IO(scribe.info(s"Watching $watchDir for files with input paths..."))) >>
+      paths.watch(watchDir, Created, Modified)
+        .evalTap(event => IO(scribe.trace(s"EVENT: ${event.toString}")))
+        .map(Event.pathOf)
+        .unNone
+        .evalTap(path => IO(scribe.trace(s"PATH: ${path.toString}")))
+        // filter out duplicate events
+        .changesBy(_.toString)
+        .evalTap(path => IO(scribe.trace(s"FILTERED_PATH: ${path.toString}")))
+        // look at the watch-event file, and consider each line as an input path
+        .flatMap(extractPaths)
+        // process each input path from the file
+        .flatMap(processInputPath(_, dryRun, cfg, clients))
+        // handle errors for this stream internally to avoid terminating the app
+        .handleErrorWith(e => Stream.eval(errorHandler(e, 3)))
+        .as(())
+
   def extractPaths(path: Path): Stream[IO, Path] =
-    Stream.eval(IO(scribe.debug(s"[WATCH]: scanning $path"))) >>
+    Stream.eval(IO(scribe.debug(s"[WATCH]: scanning $path for inputs"))) >>
       paths.readFile(path)
         .flatMap(contents => Stream.emits(contents.split("\n")))
         .map(_.trim)
         .filter(_.nonEmpty)
         .evalTap(s => IO(scribe.debug(s"[WATCH]: found $s")))
         .map(s => Paths.get(s))
-
-  /**
-    * This is extracted to treat watch-generated inputs as their own "mini run" of the program,
-    * trapping any errors generated. Otherwise, an error during processing a watch input would
-    * bubble up to the main event loop and halt the watch stream.
-    */
-  def processWatchPath(path: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
-    inputPath <- extractPaths(path)
-    _ <- processInputPath(inputPath, dryRun, cfg, clients)
-  } yield ()
 
   def processInputPath(input: Path, dryRun: Boolean, cfg: Config, clients: Clients) = for {
     input <- Stream.eval(Input(input, cfg.inputRewrite.getOrElse(List.empty)))
