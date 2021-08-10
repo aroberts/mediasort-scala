@@ -1,6 +1,5 @@
 package mediasort
 
-import cats.data.OptionT
 import mediasort.classify.{Classification, Classifier, Input}
 import mediasort.config.{CLIArgs, Config}
 import mediasort.clients.{Clients, Logging}
@@ -13,7 +12,6 @@ import fs2.io.Watcher.EventType._
 import mediasort.action.Action
 
 import java.nio.file.{Path, Paths}
-import scala.concurrent.duration._
 
 object Mediasort extends IOApp {
   implicit val cs: ContextShift[IO] = contextShift
